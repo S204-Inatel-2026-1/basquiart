@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 
 from features.auth.service import AuthService
-from features.auth.squema import UserCreate, UserLogin
+from features.auth.schema import UserCreate, UserLogin
 from features.core.database import db
 from features.core.jwt_handler import JWTHandler
 
