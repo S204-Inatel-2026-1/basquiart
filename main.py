@@ -1,9 +1,12 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from starlette.staticfiles import StaticFiles
 
-from features.auth.router import router as auth_router
 from features.core.database import db
+from features.auth.router import router as auth_router
+from features.group.router import router as group_router
 
 
 @asynccontextmanager
@@ -20,3 +23,4 @@ async def lifespan(_):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(auth_router)
+app.include_router(group_router)

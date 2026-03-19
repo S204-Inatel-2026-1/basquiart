@@ -5,23 +5,136 @@ class GroupService:
     def __init__(self, db: Prisma):
         self.db = db
 
-    async def create_group(self):
-        return {"success": True}
+    async def create_group(self, user_id, name, description):
+        group = await self.db.group.create(data={
+            "name": name,
+            "description": description,
+            "members": {
+                "create": {
+                    "userId": user_id,
+                    "role": "OWNER",
+                }
+            },
+        })
+        return group
 
-    async def send_invite(self):
-        return {"success": True}
+    async def send_invite(self, user_id, group_id, receiverId):
+        sender_membership = await self.db.groupmember.find_unique(
+            where={"userId_groupId": {"userId": user_id, "groupId": group_id}}
+        )
+        if not sender_membership:
+            raise ValueError("You are not a member of this group")
 
-    async def list_invites(self):
-        return {"success": True}
+        receiver = await self.db.user.find_unique(where={"id": receiverId})
+        if not receiver:
+            raise ValueError("User not found")
 
-    async def accept_invite(self):
-        return {"success": True}
+        already_member = await self.db.groupmember.find_unique(
+            where={"userId_groupId": {"userId": receiverId, "groupId": group_id}}
+        )
+        if already_member:
+            raise ValueError("User is already a member")
 
-    async def list_groups(self):
-        return {"success": True}
+        invite = await self.db.invite.upsert(
+            where={"receiverId_groupId": {"receiverId": receiverId, "groupId": group_id}},
+            data={
+                "create": {"senderId": user_id, "receiverId": receiverId, "groupId": group_id},
+                "update": {"senderId": user_id},
+            },
+        )
+        return invite
 
-    async def remove_member(self):
-        return {"success": True}
+    async def list_invites(self, user_id: int):
+        invites = await self.db.invite.find_many(
+            where={
+                "OR": [
+                    {"senderId": user_id},
+                    {"receiverId": user_id},
+                ]
+            }
+        )
+        return invites
 
-    async def delete_group(self):
-        return {"success": True}
+    async def accept_invite(self, user_id, invite_id):
+        invite = await self.db.invite.find_unique(where={"id": invite_id})
+
+        if not invite:
+            raise ValueError("Invite not found")
+        if invite.receiverId != user_id:
+            raise ValueError("This invite is not for you")
+
+        member = await self.db.groupmember.create(data={
+            "userId": user_id,
+            "groupId": invite.groupId,
+            "role": "MEMBER",
+        })
+        await self.db.invite.delete(where={"id": invite_id})
+
+        return member
+
+    async def list_groups(self, user_id):
+        memberships = await self.db.groupmember.find_many(
+            where={"userId": user_id},
+            include={
+                "group": {
+                    "include": {
+                        "posts": {
+                            "order_by": {"createdAt": "desc"},
+                            "take": 1,
+                            "include": {"author": True},
+                        }
+                    }
+                }
+            },
+        )
+
+        return [
+            {
+                "groupId": m.groupId,
+                "name": m.group.name,
+                "role": m.role,
+                "lastPost": {
+                    "content": m.group.posts[0].content,
+                    "author": m.group.posts[0].author.username,
+                    "createdAt": m.group.posts[0].createdAt,
+                } if m.group.posts else None,
+            }
+            for m in memberships
+        ]
+
+    async def remove_member(self, user_id, group_id, member_id):
+        requester = await self.db.groupmember.find_unique(
+            where={"userId_groupId": {"userId": user_id, "groupId": group_id}}
+        )
+        if not requester:
+            raise ValueError("You are not a member of this group")
+
+        # allow self-removal, otherwise require OWNER
+        if user_id != member_id and requester.role != "OWNER":
+            raise ValueError("Only the owner can remove other members")
+
+        target = await self.db.groupmember.find_unique(
+            where={"userId_groupId": {"userId": member_id, "groupId": group_id}}
+        )
+        if not target:
+            raise ValueError("Member not found in this group")
+
+        # prevent removing the owner
+        if target.role == "OWNER":
+            raise ValueError("Cannot remove the group owner")
+
+        await self.db.groupmember.delete(
+            where={"userId_groupId": {"userId": member_id, "groupId": group_id}}
+        )
+
+    async def delete_group(self, user_id, group_id):
+        requester = await self.db.groupmember.find_unique(
+            where={"userId_groupId": {"userId": user_id, "groupId": group_id}}
+        )
+        if not requester:
+            raise ValueError("You are not a member of this group")
+
+        if requester.role != "OWNER":
+            raise ValueError("Only the owner can delete this group")
+
+        await self.db.group.delete(where={"id": group_id})

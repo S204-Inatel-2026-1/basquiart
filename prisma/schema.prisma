@@ -13,4 +13,50 @@ model User {
   username  String   @unique
   password  String
   createdAt DateTime @default(now())
+
+  memberships     GroupMember[]
+  sentInvites     Invite[]      @relation("InviteSender")
+  receivedInvites Invite[]   @relation("InviteReceiver")
+}
+
+model Group {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  members  GroupMember[]
+  invites  Invite[]
+}
+
+model Invite {
+  id        Int          @id @default(autoincrement())
+  createdAt DateTime     @default(now())
+
+  senderId   Int
+  receiverId Int
+  groupId    Int
+  sender     User  @relation("InviteSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User  @relation("InviteReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  group      Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([receiverId, groupId]) // one pending invite per user per group
+}
+
+model GroupMember {
+  id       Int              @id @default(autoincrement())
+  role     GroupRole        @default(MEMBER)
+  joinedAt DateTime         @default(now())
+
+  userId  Int
+  groupId Int
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId]) // a user can only join a group once
+}
+
+enum GroupRole {
+  MEMBER
+  OWNER
 }

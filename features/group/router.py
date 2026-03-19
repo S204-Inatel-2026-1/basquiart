@@ -15,7 +15,7 @@ async def create_group(
         user_id: int = Depends(get_current_user),
 ):
     try:
-        group = await service.create_group()
+        group = await service.create_group(user_id, body.name, body.description)
         return group
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -27,7 +27,7 @@ async def send_invite(
         user_id: int = Depends(get_current_user),
 ):
     try:
-        invite = await service.send_invite()
+        invite = await service.send_invite(user_id, body.group_id, body.receiverId)
         return invite
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -38,7 +38,7 @@ async def list_invites(
         user_id: int = Depends(get_current_user),
 ):
     try:
-        invites = await service.list_invites()
+        invites = await service.list_invites(user_id)
         return invites
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -50,7 +50,7 @@ async def accept_invite(
         user_id: int = Depends(get_current_user),
 ):
     try:
-        member = await service.accept_invite()
+        member = await service.accept_invite(user_id, invite_id)
         return member
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -59,7 +59,7 @@ async def accept_invite(
 @router.get("/")
 async def list_my_groups(user_id: int = Depends(get_current_user)):
     try:
-        groups = await service.list_groups()
+        groups = await service.list_groups(user_id)
         return groups
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -72,7 +72,7 @@ async def remove_member(
         user_id: int = Depends(get_current_user),
 ):
     try:
-        await service.remove_member()
+        await service.remove_member(user_id, group_id, member_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -83,6 +83,6 @@ async def delete_group(
         user_id: int = Depends(get_current_user),
 ):
     try:
-        await service.delete_group()
+        await service.delete_group(user_id, group_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
