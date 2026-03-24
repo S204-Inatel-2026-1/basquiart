@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
+import {
   Plus, 
   LayoutGrid, 
   User as UserIcon, 
@@ -22,6 +22,8 @@ import {
   Search
 } from 'lucide-react';
 import { User, Artwork, Group, Comment } from './types';
+import { api } from './services/api';
+import { authService } from './services/auth';
 
 // --- Components ---
 
@@ -119,21 +121,44 @@ const Navbar = ({ user, onLogout, setPage, page, onLogoClick, onSearch }: { user
 
 const LoginPage = ({ onLogin }: { onLogin: (u: User) => void }) => {
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username) return;
+    if (!username || !password) return;
+    setError('');
     setLoading(true);
     try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password: 'password' })
-      });
-      const user = await res.json();
+      let result;
+      try {
+        result = await api.auth.login(username, password);
+      } catch {
+        result = await api.auth.register(username, password);
+      }
+
+      authService.saveToken(result.JWT);
+
+      const fallbackAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(username)}`;
+      const decoded = authService.decodeToken(result.JWT);
+      const userFromTokenId = Number(decoded?.sub ?? 0);
+
+      const user: User = result.user
+        ? {
+            ...result.user,
+            avatar_url: result.user.avatar_url || fallbackAvatar,
+          }
+        : {
+            id: Number.isFinite(userFromTokenId) ? userFromTokenId : 0,
+            username,
+            avatar_url: fallbackAvatar,
+          };
+
+      authService.saveUser(user);
       onLogin(user);
     } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao autenticar.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -161,6 +186,20 @@ const LoginPage = ({ onLogin }: { onLogin: (u: User) => void }) => {
               required
             />
           </div>
+          <div className="flex flex-col gap-2">
+            <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">Senha</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="elegant-input"
+              placeholder=""
+              required
+            />
+          </div>
+          {error && (
+            <p className="text-red-500 text-xs font-sans">{error}</p>
+          )}
           <button 
             type="submit" 
             disabled={loading}
@@ -1094,8 +1133,14 @@ export default function App() {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
 
   useEffect(() => {
-    const saved = localStorage.getItem('basquiart_user');
-    if (saved) setUser(JSON.parse(saved));
+    const savedUser = authService.getUser();
+    if (savedUser) {
+      setUser({
+        id: savedUser.id,
+        username: savedUser.username,
+        avatar_url: savedUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(savedUser.username)}`,
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -1105,13 +1150,13 @@ export default function App() {
   const handleLogin = (u: User) => {
     console.log("User logged in:", u);
     setUser(u);
-    localStorage.setItem('basquiart_user', JSON.stringify(u));
+    authService.saveUser(u);
     setPage('feed');
   };
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem('basquiart_user');
+    authService.clearAuth();
     setPage('login');
   };
 
