@@ -122,21 +122,19 @@ const Navbar = ({ user, onLogout, setPage, page, onLogoClick, onSearch }: { user
 const LoginPage = ({ onLogin }: { onLogin: (u: User) => void }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<'login' | 'register' | null>(null);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAuth = async (action: 'login' | 'register') => {
     if (!username || !password) return;
+
     setError('');
-    setLoading(true);
+    setLoadingAction(action);
     try {
-      let result;
-      try {
-        result = await api.auth.login(username, password);
-      } catch {
-        result = await api.auth.register(username, password);
-      }
+      const result =
+        action === 'login'
+          ? await api.auth.login(username, password)
+          : await api.auth.register(username, password);
 
       authService.saveToken(result.JWT);
 
@@ -158,11 +156,20 @@ const LoginPage = ({ onLogin }: { onLogin: (u: User) => void }) => {
       authService.saveUser(user);
       onLogin(user);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Falha ao autenticar.');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError(action === 'login' ? 'Falha ao entrar.' : 'Falha ao cadastrar.');
+      }
       console.error(err);
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleAuth('login');
   };
 
   return (
@@ -202,14 +209,22 @@ const LoginPage = ({ onLogin }: { onLogin: (u: User) => void }) => {
           )}
           <button 
             type="submit" 
-            disabled={loading}
+            disabled={Boolean(loadingAction)}
             className="w-full elegant-btn-primary py-4 text-lg"
           >
-            {loading ? 'Entrando...' : 'Entrar no Estúdio'}
+            {loadingAction === 'login' ? 'Entrando...' : 'Entrar no Estúdio'}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleAuth('register')}
+            disabled={Boolean(loadingAction)}
+            className="w-full elegant-btn-outline py-4 text-lg"
+          >
+            {loadingAction === 'register' ? 'Criando conta...' : 'Criar conta'}
           </button>
         </form>
         <p className="mt-8 font-sans text-[10px] text-center text-muted tracking-wide uppercase">
-          * Nenhuma senha é necessária para esta demonstração.
+          * Use a mesma senha para entrar novamente.
         </p>
       </motion.div>
     </div>
