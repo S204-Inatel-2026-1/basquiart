@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
+import {
   Plus, 
   LayoutGrid, 
   User as UserIcon, 
@@ -22,6 +22,8 @@ import {
   Search
 } from 'lucide-react';
 import { User, Artwork, Group, Comment } from './types';
+import { api } from './services/api';
+import { authService } from './services/auth';
 
 // --- Components ---
 
@@ -119,25 +121,55 @@ const Navbar = ({ user, onLogout, setPage, page, onLogoClick, onSearch }: { user
 
 const LoginPage = ({ onLogin }: { onLogin: (u: User) => void }) => {
   const [username, setUsername] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [password, setPassword] = useState('');
+  const [loadingAction, setLoadingAction] = useState<'login' | 'register' | null>(null);
+  const [error, setError] = useState('');
+
+  const handleAuth = async (action: 'login' | 'register') => {
+    if (!username || !password) return;
+
+    setError('');
+    setLoadingAction(action);
+    try {
+      const result =
+        action === 'login'
+          ? await api.auth.login(username, password)
+          : await api.auth.register(username, password);
+
+      authService.saveToken(result.JWT);
+
+      const fallbackAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(username)}`;
+      const decoded = authService.decodeToken(result.JWT);
+      const userFromTokenId = Number(decoded?.sub ?? 0);
+
+      const user: User = result.user
+        ? {
+            ...result.user,
+            avatar_url: result.user.avatar_url || fallbackAvatar,
+          }
+        : {
+            id: Number.isFinite(userFromTokenId) ? userFromTokenId : 0,
+            username,
+            avatar_url: fallbackAvatar,
+          };
+
+      authService.saveUser(user);
+      onLogin(user);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError(action === 'login' ? 'Falha ao entrar.' : 'Falha ao cadastrar.');
+      }
+      console.error(err);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username) return;
-    setLoading(true);
-    try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password: 'password' })
-      });
-      const user = await res.json();
-      onLogin(user);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    await handleAuth('login');
   };
 
   return (
@@ -161,16 +193,38 @@ const LoginPage = ({ onLogin }: { onLogin: (u: User) => void }) => {
               required
             />
           </div>
+          <div className="flex flex-col gap-2">
+            <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">Senha</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="elegant-input"
+              placeholder=""
+              required
+            />
+          </div>
+          {error && (
+            <p className="text-red-500 text-xs font-sans">{error}</p>
+          )}
           <button 
             type="submit" 
-            disabled={loading}
+            disabled={Boolean(loadingAction)}
             className="w-full elegant-btn-primary py-4 text-lg"
           >
-            {loading ? 'Entrando...' : 'Entrar no Estúdio'}
+            {loadingAction === 'login' ? 'Entrando...' : 'Entrar no Estúdio'}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleAuth('register')}
+            disabled={Boolean(loadingAction)}
+            className="w-full elegant-btn-outline py-4 text-lg"
+          >
+            {loadingAction === 'register' ? 'Criando conta...' : 'Criar conta'}
           </button>
         </form>
         <p className="mt-8 font-sans text-[10px] text-center text-muted tracking-wide uppercase">
-          * Nenhuma senha é necessária para esta demonstração.
+          * Use a mesma senha para entrar novamente.
         </p>
       </motion.div>
     </div>
@@ -353,8 +407,26 @@ const FeedPage = ({ user, groupId, groupName, userId, userName, onNavigateToSubm
   const [loading, setLoading] = useState(true);
   const [ratingTarget, setRatingTarget] = useState<Artwork | null>(null);
   const [openComments, setOpenComments] = useState<number | null>(null);
+  const isBackendGroupFeed = Boolean(groupId);
 
   const fetchArt = () => {
+    setLoading(true);
+
+    if (groupId && user) {
+      api.posts.listByGroup(groupId)
+        .then(data => {
+          setArtworks(data);
+        })
+        .catch(err => {
+          console.error(err);
+          setArtworks([]);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+      return;
+    }
+
     let url = '/api/artworks';
     if (groupId) url = `/api/artworks?group_id=${groupId}`;
     else if (userId) url = `/api/artworks?user_id=${userId}`;
@@ -363,13 +435,19 @@ const FeedPage = ({ user, groupId, groupName, userId, userName, onNavigateToSubm
       .then(res => res.json())
       .then(data => {
         setArtworks(data);
+      })
+      .catch(err => {
+        console.error(err);
+        setArtworks([]);
+      })
+      .finally(() => {
         setLoading(false);
       });
   };
 
   useEffect(() => {
     fetchArt();
-  }, [groupId, userId]);
+  }, [groupId, userId, user?.id]);
 
   if (loading) return <div className="p-20 text-center font-serif text-3xl animate-pulse text-muted">Curando Galeria...</div>;
 
@@ -448,7 +526,7 @@ const FeedPage = ({ user, groupId, groupName, userId, userName, onNavigateToSubm
                 </div>
               </div>
 
-              {openComments === art.id && (
+              {!isBackendGroupFeed && openComments === art.id && (
                 <CommentsSection artworkId={art.id} user={user} onCommentAdded={fetchArt} />
               )}
             </div>
@@ -459,15 +537,21 @@ const FeedPage = ({ user, groupId, groupName, userId, userName, onNavigateToSubm
                   <Trophy size={16} className="text-gold" />
                   {art.total_points}
                 </div>
-                <button 
-                  onClick={() => setOpenComments(openComments === art.id ? null : art.id)}
-                  className="flex items-center gap-1.5 font-sans text-[9px] tracking-widest text-muted uppercase hover:text-gold transition-colors"
-                >
-                  <MessageSquare size={12} /> Diálogo ({art.comment_count || 0})
-                </button>
+                {isBackendGroupFeed ? (
+                  <span className="flex items-center gap-1.5 font-sans text-[9px] tracking-widest text-muted uppercase">
+                    <MessageSquare size={12} /> Diálogo (indisponível)
+                  </span>
+                ) : (
+                  <button 
+                    onClick={() => setOpenComments(openComments === art.id ? null : art.id)}
+                    className="flex items-center gap-1.5 font-sans text-[9px] tracking-widest text-muted uppercase hover:text-gold transition-colors"
+                  >
+                    <MessageSquare size={12} /> Diálogo ({art.comment_count || 0})
+                  </button>
+                )}
               </div>
               
-              {user && user.id !== art.user_id && (
+              {user && user.id !== art.user_id && !isBackendGroupFeed && (
                 <button 
                   onClick={() => setRatingTarget(art)}
                   className="elegant-btn-outline text-[10px] py-1.5 px-4 tracking-widest uppercase font-bold"
@@ -514,16 +598,15 @@ const GroupsPage = ({ user, onSelectGroup, initialSearchQuery = '' }: { user: Us
 
   const fetchGroups = () => {
     console.log("Fetching groups for user:", user.id);
-    fetch(`/api/groups?user_id=${user.id}`)
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch user groups");
-        return res.json();
-      })
+    api.groups.listMine()
       .then(data => {
-        console.log("User groups:", data);
+        console.log("User groups (backend):", data);
         setGroups(data);
       })
-      .catch(err => console.error(err));
+      .catch(err => {
+        console.error(err);
+        setGroups([]);
+      });
     
     fetch('/api/groups/public')
       .then(res => {
@@ -708,7 +791,7 @@ const GroupsPage = ({ user, onSelectGroup, initialSearchQuery = '' }: { user: Us
                   <Users size={14}/> {group.member_count} Membros
                 </div>
                 <div className="font-sans text-[10px] tracking-widest font-bold uppercase text-gold/60">
-                  Código: {group.invite_code}
+                  {group.invite_code ? `Codigo: ${group.invite_code}` : 'Integrado via backend'}
                 </div>
               </div>
             </div>
@@ -917,8 +1000,7 @@ const SubmitPage = ({ user, groupId, onComplete }: { user: User, groupId?: numbe
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(groupId || null);
 
   useEffect(() => {
-    fetch(`/api/groups?user_id=${user.id}`)
-      .then(res => res.json())
+    api.groups.listMine()
       .then(groups => {
         setUserGroups(groups);
         if (groupId) {
@@ -926,6 +1008,10 @@ const SubmitPage = ({ user, groupId, onComplete }: { user: User, groupId?: numbe
         } else if (!selectedGroupId && groups.length > 0) {
           setSelectedGroupId(groups[0].id);
         }
+      })
+      .catch(err => {
+        console.error(err);
+        setUserGroups([]);
       });
   }, [user.id, groupId]);
 
@@ -1094,8 +1180,14 @@ export default function App() {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
 
   useEffect(() => {
-    const saved = localStorage.getItem('basquiart_user');
-    if (saved) setUser(JSON.parse(saved));
+    const savedUser = authService.getUser();
+    if (savedUser) {
+      setUser({
+        id: savedUser.id,
+        username: savedUser.username,
+        avatar_url: savedUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(savedUser.username)}`,
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -1105,13 +1197,13 @@ export default function App() {
   const handleLogin = (u: User) => {
     console.log("User logged in:", u);
     setUser(u);
-    localStorage.setItem('basquiart_user', JSON.stringify(u));
+    authService.saveUser(u);
     setPage('feed');
   };
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem('basquiart_user');
+    authService.clearAuth();
     setPage('login');
   };
 
