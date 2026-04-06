@@ -45,6 +45,18 @@ type BackendPost = {
   } | null;
 };
 
+type BackendPublicGroup = {
+  id: number;
+  name: string;
+  description?: string | null;
+  member_count?: number;
+  invite_code?: string | null;
+  visibility?: 'public' | 'private';
+  creator_id?: number;
+  created_at?: string;
+  cover_url?: string | null;
+};
+
 type BackendComment = {
   id: number;
   content: string;
@@ -124,6 +136,20 @@ function mapPostToArtwork(post: BackendPost): Artwork {
     comment_count: 0,
     like_count: post.likes?.totalLikes ?? 0,
     has_liked: post.likes?.hasLiked ?? false,
+  };
+}
+
+function mapPublicGroup(group: BackendPublicGroup): Group {
+  return {
+    id: group.id,
+    name: group.name,
+    description: group.description || '',
+    creator_id: group.creator_id || 0,
+    invite_code: group.invite_code || '',
+    visibility: group.visibility || 'public',
+    member_count: group.member_count || 0,
+    cover_url: group.cover_url || undefined,
+    created_at: group.created_at || new Date().toISOString(),
   };
 }
 
@@ -228,6 +254,11 @@ export const groupApi = {
   async listMine(): Promise<Group[]> {
     const response = await requestWithAuth<BackendGroupSummary[]>('/group/');
     return response.map(mapGroupSummary);
+  },
+
+  async listPublic(): Promise<Group[]> {
+    const response = await requestWithAuth<BackendPublicGroup[]>('/group/public');
+    return response.map(mapPublicGroup);
   },
 
   async create(name: string, description: string): Promise<void> {

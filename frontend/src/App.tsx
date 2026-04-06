@@ -706,19 +706,26 @@ const GroupsPage = ({ user, onSelectGroup, initialSearchQuery = '' }: { user: Us
         console.error(err);
         setGroups([]);
       });
-
-    // Compat fallback while official backend still has no public discovery endpoint.
-    fetch('/api/groups/public')
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch public groups");
-        return res.json();
-      })
+    api.groups.listPublic()
       .then(data => {
         setPublicGroups(data);
       })
       .catch(err => {
         console.error(err);
-        setPublicGroups([]);
+
+        // Fallback for CI/E2E mocks that still provide /api/groups/public.
+        fetch('/api/groups/public')
+          .then(res => {
+            if (!res.ok) throw new Error("Failed to fetch public groups");
+            return res.json();
+          })
+          .then(data => {
+            setPublicGroups(data);
+          })
+          .catch(fallbackErr => {
+            console.error(fallbackErr);
+            setPublicGroups([]);
+          });
       });
   };
 
