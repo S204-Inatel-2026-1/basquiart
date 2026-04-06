@@ -65,6 +65,14 @@ async def list_my_groups(user_id: int = Depends(get_current_user)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/public")
+async def list_public_groups(user_id: int = Depends(get_current_user)):
+    try:
+        return await service.list_public_groups(user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.delete("/{group_id}/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_member(
         group_id: int,
