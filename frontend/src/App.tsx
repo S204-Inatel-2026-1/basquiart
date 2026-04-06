@@ -679,17 +679,20 @@ const GroupsPage = ({ user, onSelectGroup, initialSearchQuery = '' }: { user: Us
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch('/api/groups/join', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ invite_code: inviteCode, user_id: user.id })
-    });
-    if (res.ok) {
+    const inviteId = Number(inviteCode.trim());
+    if (!Number.isInteger(inviteId) || inviteId <= 0) {
+      alert('Informe um ID de convite valido.');
+      return;
+    }
+
+    try {
+      await api.groups.acceptInvite(inviteId);
       setInviteCode('');
       setShowJoin(false);
       fetchGroups();
-    } else {
-      alert("Código inválido ou você já é um membro");
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Nao foi possivel entrar no coletivo.');
     }
   };
 
@@ -921,11 +924,19 @@ const GroupsPage = ({ user, onSelectGroup, initialSearchQuery = '' }: { user: Us
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white soft-card p-10 w-full max-w-md">
               <h3 className="font-serif text-3xl mb-2">Participar do Coletivo</h3>
-              <p className="text-muted text-sm mb-8">Insira o código de convite único para obter acesso.</p>
+              <p className="text-muted text-sm mb-8">Insira o ID numerico do convite para obter acesso.</p>
               <form onSubmit={handleJoin} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">Código de Convite</label>
-                  <input value={inviteCode} onChange={e => setInviteCode(e.target.value)} placeholder="" className="elegant-input text-center tracking-[0.5em] font-semibold" required />
+                  <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">ID do Convite</label>
+                  <input
+                    value={inviteCode}
+                    onChange={e => setInviteCode(e.target.value)}
+                    placeholder=""
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    className="elegant-input text-center font-semibold"
+                    required
+                  />
                 </div>
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => setShowJoin(false)} className="flex-1 elegant-btn-outline">CANCELAR</button>

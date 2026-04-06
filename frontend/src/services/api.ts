@@ -207,6 +207,12 @@ export const groupApi = {
       }),
     });
   },
+
+  async acceptInvite(inviteId: number): Promise<void> {
+    await requestWithAuth<unknown>(`/group/invites/${inviteId}/accept`, {
+      method: 'POST',
+    });
+  },
 };
 
 export const postApi = {
