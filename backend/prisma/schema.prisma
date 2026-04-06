@@ -27,6 +27,7 @@ model Group {
   id          Int      @id @default(autoincrement())
   name        String
   description String?
+  visibility  GroupVisibility @default(PRIVATE)
   createdAt   DateTime @default(now())
 
   members  GroupMember[]
@@ -64,6 +65,11 @@ model GroupMember {
 enum GroupRole {
   MEMBER
   OWNER
+}
+
+enum GroupVisibility {
+  PUBLIC
+  PRIVATE
 }
 
 model Post {

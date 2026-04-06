@@ -15,7 +15,7 @@ async def create_group(
         user_id: int = Depends(get_current_user),
 ):
     try:
-        group = await service.create_group(user_id, body.name, body.description)
+        group = await service.create_group(user_id, body.name, body.description, body.visibility)
         return group
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
