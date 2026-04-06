@@ -197,6 +197,16 @@ export const groupApi = {
     const response = await requestWithAuth<BackendGroupSummary[]>('/group/');
     return response.map(mapGroupSummary);
   },
+
+  async create(name: string, description: string): Promise<void> {
+    await jsonRequest<unknown>('/group/create', {
+      method: 'POST',
+      body: JSON.stringify({
+        name,
+        description: description || null,
+      }),
+    });
+  },
 };
 
 export const postApi = {

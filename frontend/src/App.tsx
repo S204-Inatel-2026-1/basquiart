@@ -652,23 +652,14 @@ const GroupsPage = ({ user, onSelectGroup, initialSearchQuery = '' }: { user: Us
     e.preventDefault();
     console.log("Creating group:", name, "User:", user.id);
     try {
-      const res = await fetch('/api/groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description, creator_id: user.id, visibility, cover_url: coverUrl })
-      });
-      
-      if (res.ok) {
-        setName('');
-        setDescription('');
-        setVisibility('public');
-        setCoverUrl(null);
-        setShowCreate(false);
-        fetchGroups();
-      } else {
-        const err = await res.json();
-        alert(err.error || "Erro ao criar coletivo");
-      }
+      await api.groups.create(name, description);
+
+      setName('');
+      setDescription('');
+      setVisibility('public');
+      setCoverUrl(null);
+      setShowCreate(false);
+      fetchGroups();
     } catch (err) {
       console.error(err);
       alert("Erro de conexão ao criar coletivo");
