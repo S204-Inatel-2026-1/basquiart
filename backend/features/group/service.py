@@ -10,6 +10,10 @@ class GroupService:
         return "public" if value == "PUBLIC" else "private"
 
     async def create_group(self, user_id, name, description, visibility):
+        requester = await self.db.user.find_unique(where={"id": user_id})
+        if not requester:
+            raise ValueError("User not found. Please log in again.")
+
         group = await self.db.group.create(data={
             "name": name,
             "description": description,

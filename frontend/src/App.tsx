@@ -773,7 +773,7 @@ const GroupsPage = ({ user, onSelectGroup, initialSearchQuery = '' }: { user: Us
       fetchGroups();
     } catch (err) {
       console.error(err);
-      alert("Erro de conexão ao criar coletivo");
+      alert(err instanceof Error ? err.message : "Erro ao criar coletivo");
     }
   };
 
