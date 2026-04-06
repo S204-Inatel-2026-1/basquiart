@@ -1,4 +1,4 @@
-import type { Artwork, Group, User } from '../types';
+import type { Artwork, Comment, Group, User } from '../types';
 import { authService } from './auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -43,6 +43,18 @@ type BackendPost = {
     totalLikes: number;
     hasLiked: boolean;
   } | null;
+};
+
+type BackendComment = {
+  id: number;
+  content: string;
+  createdAt: string;
+  userId: number;
+  postId: number;
+  user: {
+    id: number;
+    username: string;
+  };
 };
 
 type BackendPaginatedPosts = {
@@ -112,6 +124,20 @@ function mapPostToArtwork(post: BackendPost): Artwork {
     comment_count: 0,
     like_count: post.likes?.totalLikes ?? 0,
     has_liked: post.likes?.hasLiked ?? false,
+  };
+}
+
+function mapCommentToFrontend(comment: BackendComment): Comment {
+  const username = comment.user?.username || `user-${comment.userId}`;
+
+  return {
+    id: comment.id,
+    artwork_id: comment.postId,
+    user_id: comment.userId,
+    username,
+    avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(username)}`,
+    content: comment.content,
+    created_at: comment.createdAt,
   };
 }
 
@@ -269,6 +295,19 @@ export const postApi = {
         ],
       }),
     });
+  },
+
+  async listComments(postId: number): Promise<Comment[]> {
+    const response = await requestWithAuth<BackendComment[]>(`/posts/${postId}/comments`);
+    return response.map(mapCommentToFrontend);
+  },
+
+  async createComment(postId: number, content: string): Promise<Comment> {
+    const response = await jsonRequest<BackendComment>(`/posts/${postId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+    return mapCommentToFrontend(response);
   },
 };
 

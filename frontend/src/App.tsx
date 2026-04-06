@@ -317,14 +317,39 @@ const RatingModal = ({
   );
 };
 
-const CommentsSection = ({ artworkId, user, onCommentAdded }: { artworkId: number, user: User | null, onCommentAdded?: () => void }) => {
+const CommentsSection = ({
+  artworkId,
+  user,
+  onCommentAdded,
+  useBackendComments = false,
+}: {
+  artworkId: number,
+  user: User | null,
+  onCommentAdded?: () => void,
+  useBackendComments?: boolean
+}) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchComments = () => {
+    setLoading(true);
     console.log("Fetching comments for artwork:", artworkId);
+
+    if (useBackendComments) {
+      api.posts.listComments(artworkId)
+        .then(data => {
+          setComments(data);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error("Error fetching comments:", err);
+          setLoading(false);
+        });
+      return;
+    }
+
     fetch(`/api/artworks/${artworkId}/comments`)
       .then(res => {
         if (!res.ok) throw new Error("Failed to fetch comments");
@@ -354,6 +379,14 @@ const CommentsSection = ({ artworkId, user, onCommentAdded }: { artworkId: numbe
     }
     setSubmitting(true);
     try {
+      if (useBackendComments) {
+        await api.posts.createComment(artworkId, newComment);
+        setNewComment('');
+        fetchComments();
+        if (onCommentAdded) onCommentAdded();
+        return;
+      }
+
       const res = await fetch(`/api/artworks/${artworkId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -365,11 +398,11 @@ const CommentsSection = ({ artworkId, user, onCommentAdded }: { artworkId: numbe
         if (onCommentAdded) onCommentAdded();
       } else {
         const err = await res.json();
-        alert(err.error || "Erro ao postar coment√°rio");
+        alert(err.error || "Erro ao postar coment·rio");
       }
     } catch (err) {
       console.error(err);
-      alert("Erro de conex√£o ao postar coment√°rio");
+      alert(err instanceof Error ? err.message : "Erro de conex„o ao postar coment·rio");
     } finally {
       setSubmitting(false);
     }
@@ -582,8 +615,13 @@ const FeedPage = ({ user, groupId, groupName, userId, userName, onNavigateToSubm
                 </div>
               </div>
 
-              {!isBackendGroupFeed && openComments === art.id && (
-                <CommentsSection artworkId={art.id} user={user} onCommentAdded={fetchArt} />
+              {openComments === art.id && (
+                <CommentsSection
+                  artworkId={art.id}
+                  user={user}
+                  onCommentAdded={fetchArt}
+                  useBackendComments={isBackendGroupFeed}
+                />
               )}
             </div>
 
@@ -593,25 +631,20 @@ const FeedPage = ({ user, groupId, groupName, userId, userName, onNavigateToSubm
                   <Trophy size={16} className="text-gold" />
                   {art.total_points}
                 </div>
-                {isBackendGroupFeed ? (
-                  <>
-                    <span className="flex items-center gap-1.5 font-sans text-[9px] tracking-widest text-muted uppercase">
-                      <MessageSquare size={12} /> Di·logo (indisponÌvel)
-                    </span>
-                    <button
-                      onClick={() => void handleToggleLike(art)}
-                      disabled={likingPostIds.includes(art.id)}
-                      className={`flex items-center gap-1.5 font-sans text-[9px] tracking-widest uppercase transition-colors ${art.has_liked ? 'text-red-500' : 'text-muted hover:text-red-500'} disabled:opacity-40`}
-                    >
-                      <Heart size={12} fill={art.has_liked ? 'currentColor' : 'none'} /> Curtidas ({art.like_count || 0})
-                    </button>
-                  </>
-                ) : (
-                  <button 
-                    onClick={() => setOpenComments(openComments === art.id ? null : art.id)}
-                    className="flex items-center gap-1.5 font-sans text-[9px] tracking-widest text-muted uppercase hover:text-gold transition-colors"
+
+                <button 
+                  onClick={() => setOpenComments(openComments === art.id ? null : art.id)}
+                  className="flex items-center gap-1.5 font-sans text-[9px] tracking-widest text-muted uppercase hover:text-gold transition-colors"
+                >
+                  <MessageSquare size={12} /> Di·logo ({art.comment_count || 0})
+                </button>
+                {isBackendGroupFeed && (
+                  <button
+                    onClick={() => void handleToggleLike(art)}
+                    disabled={likingPostIds.includes(art.id)}
+                    className={`flex items-center gap-1.5 font-sans text-[9px] tracking-widest uppercase transition-colors ${art.has_liked ? 'text-red-500' : 'text-muted hover:text-red-500'} disabled:opacity-40`}
                   >
-                    <MessageSquare size={12} /> Di√°logo ({art.comment_count || 0})
+                    <Heart size={12} fill={art.has_liked ? 'currentColor' : 'none'} /> Curtidas ({art.like_count || 0})
                   </button>
                 )}
               </div>
