@@ -39,6 +39,10 @@ type BackendPost = {
     average: number;
     totalVotes: number;
   }> | null;
+  likes?: {
+    totalLikes: number;
+    hasLiked: boolean;
+  } | null;
 };
 
 type BackendPaginatedPosts = {
@@ -106,6 +110,8 @@ function mapPostToArtwork(post: BackendPost): Artwork {
     rating_count: ratingCount,
     created_at: post.createdAt,
     comment_count: 0,
+    like_count: post.likes?.totalLikes ?? 0,
+    has_liked: post.likes?.hasLiked ?? false,
   };
 }
 
@@ -238,6 +244,12 @@ export const postApi = {
     await requestWithAuth<unknown>(`/posts/${groupId}`, {
       method: 'POST',
       body: formData,
+    });
+  },
+
+  async toggleLike(postId: number): Promise<{ liked: boolean }> {
+    return requestWithAuth<{ liked: boolean }>(`/posts/${postId}/like`, {
+      method: 'POST',
     });
   },
 

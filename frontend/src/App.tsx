@@ -433,8 +433,38 @@ const FeedPage = ({ user, groupId, groupName, userId, userName, onNavigateToSubm
   const [loading, setLoading] = useState(true);
   const [ratingTarget, setRatingTarget] = useState<Artwork | null>(null);
   const [openComments, setOpenComments] = useState<number | null>(null);
+  const [likingPostIds, setLikingPostIds] = useState<number[]>([]);
   const isBackendGroupFeed = Boolean(groupId);
 
+  const handleToggleLike = async (artwork: Artwork) => {
+    if (!isBackendGroupFeed || !user) return;
+    if (likingPostIds.includes(artwork.id)) return;
+
+    setLikingPostIds(prev => [...prev, artwork.id]);
+    try {
+      const response = await api.posts.toggleLike(artwork.id);
+      setArtworks(prev => prev.map(item => {
+        if (item.id !== artwork.id) return item;
+
+        const currentlyLiked = Boolean(item.has_liked);
+        const currentlyCount = item.like_count || 0;
+        const nextLiked = response.liked;
+        const nextCount = nextLiked
+          ? (currentlyLiked ? currentlyCount : currentlyCount + 1)
+          : (currentlyLiked ? Math.max(0, currentlyCount - 1) : currentlyCount);
+
+        return {
+          ...item,
+          has_liked: nextLiked,
+          like_count: nextCount,
+        };
+      }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLikingPostIds(prev => prev.filter(id => id !== artwork.id));
+    }
+  };
   const fetchArt = () => {
     setLoading(true);
 
@@ -564,9 +594,18 @@ const FeedPage = ({ user, groupId, groupName, userId, userName, onNavigateToSubm
                   {art.total_points}
                 </div>
                 {isBackendGroupFeed ? (
-                  <span className="flex items-center gap-1.5 font-sans text-[9px] tracking-widest text-muted uppercase">
-                    <MessageSquare size={12} /> Di√°logo (indispon√≠vel)
-                  </span>
+                  <>
+                    <span className="flex items-center gap-1.5 font-sans text-[9px] tracking-widest text-muted uppercase">
+                      <MessageSquare size={12} /> Di·logo (indisponÌvel)
+                    </span>
+                    <button
+                      onClick={() => void handleToggleLike(art)}
+                      disabled={likingPostIds.includes(art.id)}
+                      className={`flex items-center gap-1.5 font-sans text-[9px] tracking-widest uppercase transition-colors ${art.has_liked ? 'text-red-500' : 'text-muted hover:text-red-500'} disabled:opacity-40`}
+                    >
+                      <Heart size={12} fill={art.has_liked ? 'currentColor' : 'none'} /> Curtidas ({art.like_count || 0})
+                    </button>
+                  </>
                 ) : (
                   <button 
                     onClick={() => setOpenComments(openComments === art.id ? null : art.id)}
