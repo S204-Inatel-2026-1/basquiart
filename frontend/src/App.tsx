@@ -763,7 +763,7 @@ const GroupsPage = ({ user, onSelectGroup, initialSearchQuery = '' }: { user: Us
     e.preventDefault();
     console.log("Creating group:", name, "User:", user.id);
     try {
-      await api.groups.create(name, description);
+      await api.groups.create(name, description, visibility);
 
       setName('');
       setDescription('');
@@ -804,6 +804,27 @@ const GroupsPage = ({ user, onSelectGroup, initialSearchQuery = '' }: { user: Us
     } catch (err) {
       console.error(err);
       alert(err instanceof Error ? err.message : 'Nao foi possivel entrar no coletivo.');
+    }
+  };
+
+  const handleCreateInvite = async (groupId: number) => {
+    const rawUserId = window.prompt('Informe o ID numerico do usuario para convidar:');
+    if (!rawUserId) {
+      return;
+    }
+
+    const receiverId = Number(rawUserId.trim());
+    if (!Number.isInteger(receiverId) || receiverId <= 0) {
+      alert('Informe um ID de usuario valido.');
+      return;
+    }
+
+    try {
+      const inviteId = await api.groups.sendInvite(groupId, receiverId);
+      alert(`Convite criado com sucesso. ID do convite: ${inviteId}`);
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Nao foi possivel criar o convite.');
     }
   };
 
@@ -905,6 +926,16 @@ const GroupsPage = ({ user, onSelectGroup, initialSearchQuery = '' }: { user: Us
                       ? 'Coletivo Privado'
                       : 'Coletivo Público'}
                 </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleCreateInvite(group.id);
+                  }}
+                  className="font-sans text-[9px] tracking-widest font-bold uppercase text-muted hover:text-gold transition-colors"
+                >
+                  Convidar
+                </button>
               </div>
             </div>
           </motion.div>

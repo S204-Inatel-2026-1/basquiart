@@ -12,6 +12,9 @@ type BackendGroupSummary = {
   groupId: number;
   name: string;
   role: 'OWNER' | 'MEMBER';
+  description?: string;
+  member_count?: number;
+  visibility?: 'public' | 'private';
   lastPost?: {
     content: string;
     author: string;
@@ -58,6 +61,10 @@ type BackendPublicGroup = {
   cover_url?: string | null;
 };
 
+type BackendInvite = {
+  id: number;
+};
+
 type BackendComment = {
   id: number;
   content: string;
@@ -88,16 +95,18 @@ function withAvatar<T extends User>(user: T): T {
 }
 
 function mapGroupSummary(group: BackendGroupSummary): Group {
+  const fallbackDescription = group.lastPost
+    ? `Ultimo post de ${group.lastPost.author}`
+    : `Participacao como ${group.role.toLowerCase()}`;
+
   return {
     id: group.groupId,
     name: group.name,
-    description: group.lastPost
-      ? `Ultimo post de ${group.lastPost.author}`
-      : `Participacao como ${group.role.toLowerCase()}`,
+    description: group.description || fallbackDescription,
     creator_id: 0,
     invite_code: '',
-    visibility: 'private',
-    member_count: 1,
+    visibility: group.visibility || 'private',
+    member_count: group.member_count || 0,
     cover_url: undefined,
     created_at: group.lastPost?.createdAt || new Date().toISOString(),
   };
@@ -308,14 +317,26 @@ export const groupApi = {
     return response.map(mapPublicGroup);
   },
 
-  async create(name: string, description: string): Promise<void> {
+  async create(name: string, description: string, visibility: 'public' | 'private'): Promise<void> {
     await jsonRequest<unknown>('/group/create', {
       method: 'POST',
       body: JSON.stringify({
         name,
         description: description || null,
+        visibility,
       }),
     });
+  },
+
+  async sendInvite(groupId: number, receiverId: number): Promise<number> {
+    const response = await jsonRequest<BackendInvite>('/group/invite', {
+      method: 'POST',
+      body: JSON.stringify({
+        group_id: groupId,
+        receiverId,
+      }),
+    });
+    return response.id;
   },
 
   async acceptInvite(inviteId: number): Promise<void> {
