@@ -73,6 +73,7 @@ class PostResponse(BaseModel):
     images: list[ImageResponse] | None = None
     ratings: list[CategoryAverageResponse] | None = None
     likes: LikeResponse | None = None
+    commentCount: int | None = None
 
     class Config:
         from_attributes = True

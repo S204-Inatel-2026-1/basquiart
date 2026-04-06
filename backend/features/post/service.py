@@ -44,6 +44,7 @@ class PostService:
                 "images": True,
                 "ratings": {"include": {"category": True}},
                 "likes": True,
+                "comments": True,
             },
         )
 
@@ -61,7 +62,8 @@ class PostService:
                     "likes": {
                         "totalLikes": len(post.likes),
                         "hasLiked": any(like.userId == user_id for like in post.likes),
-                    }
+                    },
+                    "commentCount": len(post.comments),
                 }
                 for post in posts
             ],
