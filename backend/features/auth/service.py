@@ -7,7 +7,15 @@ class AuthService:
         self.db = db
         self.jwtHandler = jwtHandler
 
-    async def register(self, username: str, password: str) -> dict:
+    @staticmethod
+    def _serialize_user(user):
+        return {
+            "id": user.id,
+            "username": user.username,
+            "createdAt": user.createdAt,
+        }
+
+    async def register(self, username: str, password: str) -> tuple:
         existing = await self.db.user.find_unique(where={"username": username})
         if existing:
             raise ValueError("Username already registered")
@@ -18,12 +26,14 @@ class AuthService:
         })
 
         token = self.jwtHandler.create_token(user.id)
-        return token
+        return token, self._serialize_user(user)
 
-    async def login(self, username: str, password: str) -> dict:
+    async def login(self, username: str, password: str) -> tuple:
         user = await self.db.user.find_unique(where={"username": username})
-        if not user or password != user.password:
+        if not user:
+            raise ValueError("Invalid credentials")
+        if password != user.password:
             raise ValueError("Invalid credentials")
 
         token = self.jwtHandler.create_token(user.id)
-        return token
+        return token, self._serialize_user(user)
