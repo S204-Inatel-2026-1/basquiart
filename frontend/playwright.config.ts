@@ -2,11 +2,16 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
+  outputDir: 'test-results',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 2 : undefined,
-  reporter: [['html', { open: 'never' }], ['list']],
+  reporter: [
+    ['html', { open: 'never', outputFolder: 'playwright-report' }],
+    ['junit', { outputFile: 'test-results/e2e-junit-results.xml' }],
+    ['list'],
+  ],
   use: {
     baseURL: 'http://127.0.0.1:4173',
     trace: 'on-first-retry',
