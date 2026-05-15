@@ -145,10 +145,12 @@ async function startServer() {
   app.get("/api/artworks", (req, res) => {
     const { group_id, user_id } = req.query;
     let query = `
-      SELECT artworks.*, users.username, users.avatar_url,
+      SELECT artworks.*,
+      COALESCE(users.username, 'usuario-' || artworks.user_id) as username,
+      COALESCE(users.avatar_url, 'https://api.dicebear.com/7.x/avataaars/svg?seed=user' || artworks.user_id) as avatar_url,
       (SELECT COUNT(*) FROM comments WHERE artwork_id = artworks.id) as comment_count
-      FROM artworks 
-      JOIN users ON artworks.user_id = users.id 
+      FROM artworks
+      LEFT JOIN users ON artworks.user_id = users.id
     `;
     const params = [];
     const whereClauses = [];
@@ -179,10 +181,18 @@ async function startServer() {
   });
 
   app.post("/api/artworks", (req, res) => {
-    const { user_id, group_ids, title, description, image_url } = req.body;
+    const { user_id, group_ids, title, description, image_url, username, avatar_url } = req.body;
     console.log("Creating artwork:", title, "for user:", user_id);
-    
+
     try {
+      // Upsert user so LEFT JOIN in GET returns correct username/avatar
+      if (username) {
+        db.prepare(`
+          INSERT INTO users (id, username, avatar_url) VALUES (?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET avatar_url = excluded.avatar_url
+        `).run(user_id, username, avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`);
+      }
+
       const info = db.prepare(`
         INSERT INTO artworks (user_id, title, description, image_url)
         VALUES (?, ?, ?, ?)

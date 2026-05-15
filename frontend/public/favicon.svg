@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Handle body -->
+  <path d="M83 8 L94 19 L27 86 L16 75 Z" fill="#111"/>
+  <!-- Ferrule upper band -->
+  <path d="M33 61 L49 77 L41 85 L25 69 Z" fill="#444"/>
+  <!-- Brush head oval -->
+  <ellipse cx="13" cy="91" rx="15" ry="9" transform="rotate(-45 13 91)" fill="#111"/>
+</svg>

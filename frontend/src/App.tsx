@@ -565,7 +565,7 @@ const FeedPage = ({ user, groupId, groupName, userId, userName, onNavigateToSubm
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      <div className={`grid gap-8 ${isBackendGroupFeed ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
         {artworks.map((art) => (
           <motion.div 
             key={art.id}
@@ -1097,21 +1097,46 @@ const GroupsPage = ({ user, onSelectGroup, initialSearchQuery = '' }: { user: Us
   );
 };
 
-const SettingsPage = ({ user, onLogout }: { user: User, onLogout: () => void }) => (
+const SettingsPage = ({ user, onLogout, onUpdateUser }: { user: User, onLogout: () => void, onUpdateUser: (u: User) => void }) => {
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      localStorage.setItem(`basquiart_avatar_${user.id}`, base64);
+      onUpdateUser({ ...user, avatar_url: base64 });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
   <div className="max-w-3xl mx-auto p-6 sm:p-12">
-    <motion.div 
+    <motion.div
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       className="bg-white soft-card p-10 sm:p-16"
     >
       <h1 className="font-serif text-5xl mb-8">Configurações</h1>
-      
+
       <div className="space-y-12">
         <div className="flex items-center gap-8 pb-12 border-b border-ink/5">
-          <img src={user.avatar_url} alt={user.username} className="w-24 h-24 rounded-full border-2 border-gold/20 p-1" />
+          <div className="relative group">
+            <img src={user.avatar_url} alt={user.username} className="w-24 h-24 rounded-full border-2 border-gold/20 p-1 object-cover" />
+            <label
+              htmlFor="avatar-upload"
+              className="absolute inset-0 flex items-center justify-center rounded-full bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            >
+              <Upload size={20} className="text-white" />
+            </label>
+            <input id="avatar-upload" type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+          </div>
           <div>
             <h2 className="font-serif text-3xl">{user.username}</h2>
             <p className="text-muted font-sans text-sm tracking-wide">Membro desde {new Date().getFullYear()}</p>
+            <label htmlFor="avatar-upload" className="mt-2 inline-block elegant-btn-outline text-[10px] py-1.5 px-4 tracking-widest uppercase font-bold cursor-pointer">
+              Alterar Foto
+            </label>
           </div>
         </div>
 
@@ -1139,7 +1164,8 @@ const SettingsPage = ({ user, onLogout }: { user: User, onLogout: () => void }) 
       </div>
     </motion.div>
   </div>
-);
+  );
+};
 
 const SubmitPage = ({ user, groupId, onComplete }: { user: User, groupId?: number, onComplete: () => void }) => {
   const [title, setTitle] = useState('');
@@ -1205,6 +1231,8 @@ const SubmitPage = ({ user, groupId, onComplete }: { user: User, groupId?: numbe
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: user.id,
+          username: user.username,
+          avatar_url: user.avatar_url,
           group_ids: visibility === 'public' ? [] : [selectedGroupId],
           title,
           description,
@@ -1371,9 +1399,16 @@ export default function App() {
 
   const handleLogin = (u: User) => {
     console.log("User logged in:", u);
+    const customAvatar = localStorage.getItem(`basquiart_avatar_${u.id}`);
+    if (customAvatar) u = { ...u, avatar_url: customAvatar };
     setUser(u);
     authService.saveUser(u);
     setPage('feed');
+  };
+
+  const handleUpdateUser = (u: User) => {
+    setUser(u);
+    authService.saveUser(u);
   };
 
   const handleLogout = () => {
@@ -1472,7 +1507,7 @@ export default function App() {
 
           {page === 'settings' && user && (
             <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <SettingsPage user={user} onLogout={handleLogout} />
+              <SettingsPage user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} />
             </motion.div>
           )}
         </AnimatePresence>
