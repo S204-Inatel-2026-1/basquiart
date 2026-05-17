@@ -6,6 +6,7 @@ export interface AuthUser {
   username: string;
   createdAt?: string;
   avatar_url?: string;
+  role?: 'admin' | 'user';
 }
 
 export const authService = {
@@ -18,7 +19,13 @@ export const authService = {
   },
 
   isAuthenticated(): boolean {
-    return Boolean(localStorage.getItem(TOKEN_KEY));
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) return false;
+    if (authService.isTokenExpired(token)) {
+      authService.clearAuth();
+      return false;
+    }
+    return true;
   },
 
   clearAuth(): void {
