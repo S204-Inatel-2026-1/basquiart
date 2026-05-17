@@ -73,7 +73,7 @@ export const CommentsSection = ({
       const res = await fetch(`/api/artworks/${artworkId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.id, content: newComment }),
+        body: JSON.stringify({ content: newComment }),
       });
       if (res.ok) {
         setNewComment('');

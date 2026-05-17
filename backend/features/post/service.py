@@ -133,6 +133,8 @@ class PostService:
         if not post:
             raise ValueError("Post not found")
 
+        await self.assertUserIsMemberOfGroup(user_id, post.groupId)
+
         existing = await self.db.postlike.find_unique(
             where={"userId_postId": {"userId": user_id, "postId": post_id}}
         )
@@ -153,6 +155,8 @@ class PostService:
         )
         if not post:
             raise ValueError("Post not found")
+
+        await self.assertUserIsMemberOfGroup(user_id, post.groupId)
 
         if not post.images:
             raise ValueError("You can only rate posts that have images")

@@ -1,4 +1,5 @@
 const TOKEN_KEY = 'basquiart_jwt_token';
+const REFRESH_TOKEN_KEY = 'basquiart_refresh_token';
 const USER_KEY = 'basquiart_user';
 
 export interface AuthUser {
@@ -28,8 +29,17 @@ export const authService = {
     return true;
   },
 
+  saveRefreshToken(token: string): void {
+    localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  },
+
+  getRefreshToken(): string | null {
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
+  },
+
   clearAuth(): void {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
   },
 

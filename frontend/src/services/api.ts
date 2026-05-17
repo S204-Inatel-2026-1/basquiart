@@ -5,6 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 
 export type AuthResponse = {
   JWT: string;
+  refresh_token?: string;
   user?: User;
 };
 
@@ -235,23 +236,65 @@ function extractApiErrorMessage(data: unknown, fallback: string): string {
   return fallback;
 }
 
-async function requestWithAuth<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+let _isRefreshing = false;
+
+async function _tryRefreshToken(): Promise<string | null> {
+  const refreshToken = authService.getRefreshToken();
+  if (!refreshToken) return null;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as { JWT: string };
+    authService.saveToken(data.JWT);
+    return data.JWT;
+  } catch {
+    return null;
+  }
+}
+
+async function requestWithAuth<T>(endpoint: string, options: RequestInit = {}, isRetry = false): Promise<T> {
   const token = authService.getToken();
   const headers = new Headers(options.headers);
 
   if (token) {
-    if (authService.isTokenExpired(token)) {
-      authService.clearAuth();
-      throw new Error('Sessao expirada. Faca login novamente.');
+    if (authService.isTokenExpired(token) && !isRetry) {
+      if (_isRefreshing) {
+        authService.clearAuth();
+        throw new Error('Sessao expirada. Faca login novamente.');
+      }
+      _isRefreshing = true;
+      const newToken = await _tryRefreshToken();
+      _isRefreshing = false;
+      if (!newToken) {
+        authService.clearAuth();
+        throw new Error('Sessao expirada. Faca login novamente.');
+      }
+      headers.set('Authorization', `Bearer ${newToken}`);
+    } else {
+      headers.set('Authorization', `Bearer ${token}`);
     }
-
-    headers.set('Authorization', `Bearer ${token}`);
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
   });
+
+  if (response.status === 401 && !isRetry) {
+    _isRefreshing = true;
+    const newToken = await _tryRefreshToken();
+    _isRefreshing = false;
+    if (newToken) {
+      return requestWithAuth<T>(endpoint, options, true);
+    }
+    authService.clearAuth();
+    throw new Error('Nao autorizado. Faca login novamente.');
+  }
 
   if (response.status === 401) {
     authService.clearAuth();

@@ -22,6 +22,9 @@ export const LoginPage = ({ onLogin }: { onLogin: (u: User) => void }) => {
           : await api.auth.register(username, password);
 
       authService.saveToken(result.JWT);
+      if (result.refresh_token) {
+        authService.saveRefreshToken(result.refresh_token);
+      }
 
       const fallbackAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(username)}`;
       const decoded = authService.decodeToken(result.JWT);

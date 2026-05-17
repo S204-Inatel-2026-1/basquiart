@@ -23,3 +23,7 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
+
+
+class RefreshTokenBody(BaseModel):
+    refresh_token: str
