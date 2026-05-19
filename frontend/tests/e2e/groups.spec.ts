@@ -213,12 +213,6 @@ test('participa de coletivo usando id de convite', async ({ page }) => {
 });
 
 test('cria convite para usuario a partir de coletivo proprio', async ({ page }) => {
-  await page.addInitScript(() => {
-    window.prompt = () => '99';
-    window.alert = (message?: string) => {
-      window.localStorage.setItem('last_invite_alert', String(message ?? ''));
-    };
-  });
   await setupAuthenticatedGroups(page);
 
   let invitePayload: Record<string, unknown> | null = null;
@@ -232,7 +226,18 @@ test('cria convite para usuario a partir de coletivo proprio', async ({ page }) 
   });
 
   await openGroupsPage(page);
-  await page.getByRole('button', { name: 'Convidar' }).click();
+  await page.evaluate(() => {
+    window.prompt = () => '99';
+    window.alert = (message?: string) => {
+      window.localStorage.setItem('last_invite_alert', String(message ?? ''));
+    };
+  });
+
+  const groupCard = page
+    .locator('.soft-card')
+    .filter({ has: page.getByRole('heading', { name: 'Atelie Central' }) })
+    .first();
+  await groupCard.getByRole('button', { name: 'Convidar' }).click();
 
   await expect.poll(() => invitePayload).toMatchObject({
     group_id: 10,
