@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Artwork, User } from '../types';
 import { api } from '../services/api';
+import { itemMotion, modalBackdropMotion, modalPanelMotion, staggerContainer, subtleButtonMotion } from '../lib/motion';
 
 export const RatingModal = ({
   artwork,
@@ -49,17 +50,16 @@ export const RatingModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
+    <motion.div {...modalBackdropMotion} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
       <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
+        {...modalPanelMotion}
         className="bg-white soft-card p-10 max-w-md w-full"
       >
         <h3 className="font-serif text-3xl mb-2">Avaliar Obra</h3>
         <p className="text-muted text-sm mb-8">Forneça sua avaliação honesta através de três pilares.</p>
-        <div className="space-y-8">
+        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-8">
           {(['technique', 'authenticity', 'creativity'] as const).map((key) => (
-            <div key={key}>
+            <motion.div key={key} variants={itemMotion}>
               <div className="flex justify-between font-sans text-[10px] tracking-widest font-semibold uppercase mb-3">
                 <span className="text-muted">
                   {key === 'technique' ? 'Técnica' : key === 'authenticity' ? 'Autenticidade' : 'Criatividade'}
@@ -74,17 +74,17 @@ export const RatingModal = ({
                 onChange={(e) => setScores({ ...scores, [key]: parseInt(e.target.value) })}
                 className="w-full accent-gold h-1.5 bg-ink/5 rounded-full appearance-none cursor-pointer"
               />
-            </div>
+            </motion.div>
           ))}
           {error && <p className="text-red-500 text-xs font-sans">{error}</p>}
-          <div className="flex gap-4 mt-10">
-            <button onClick={onClose} className="flex-1 elegant-btn-outline">CANCELAR</button>
-            <button onClick={handleSubmit} disabled={submitting} className="flex-1 elegant-btn-primary">
+          <motion.div variants={itemMotion} className="flex gap-4 mt-10">
+            <motion.button {...subtleButtonMotion} onClick={onClose} className="flex-1 elegant-btn-outline">CANCELAR</motion.button>
+            <motion.button {...subtleButtonMotion} onClick={handleSubmit} disabled={submitting} className="flex-1 elegant-btn-primary">
               {submitting ? '...' : 'ENVIAR AVALIAÇÃO'}
-            </button>
-          </div>
-        </div>
+            </motion.button>
+          </motion.div>
+        </motion.div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 };

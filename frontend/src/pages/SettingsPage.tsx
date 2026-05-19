@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Upload } from 'lucide-react';
 import { User } from '../types';
+import { itemMotion, panelMotion, staggerContainer, subtleButtonMotion } from '../lib/motion';
 
 export const SettingsPage = ({
   user,
@@ -39,15 +40,11 @@ export const SettingsPage = ({
 
   return (
     <div className="max-w-3xl mx-auto p-6 sm:p-12">
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="bg-white soft-card p-10 sm:p-16"
-      >
+      <motion.div {...panelMotion} className="bg-white soft-card p-10 sm:p-16">
         <h1 className="font-serif text-5xl mb-8">Configurações</h1>
 
-        <div className="space-y-12">
-          <div className="flex items-center gap-8 pb-12 border-b border-ink/5">
+        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-12">
+          <motion.div variants={itemMotion} className="flex items-center gap-8 pb-12 border-b border-ink/5">
             <div className="relative group">
               <img src={user.avatar_url} alt={user.username} className="w-24 h-24 rounded-full border-2 border-gold/20 p-1 object-cover" />
               <label
@@ -65,13 +62,14 @@ export const SettingsPage = ({
                 <span className="font-sans text-[11px] tracking-widest font-semibold text-muted uppercase">
                   Meu ID: {user.id}
                 </span>
-                <button
+                <motion.button
+                  {...subtleButtonMotion}
                   type="button"
                   onClick={() => void handleCopyUserId()}
                   className="elegant-btn-outline text-[9px] py-1.5 px-3 tracking-widest uppercase font-bold"
                 >
                   Copiar ID
-                </button>
+                </motion.button>
                 {copyStatus === 'success' && (
                   <span className="text-[10px] font-sans font-semibold text-green-600">Copiado!</span>
                 )}
@@ -83,9 +81,9 @@ export const SettingsPage = ({
                 Alterar Foto
               </label>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="space-y-6">
+          <motion.div variants={itemMotion} className="space-y-6">
             <h3 className="font-sans text-[10px] tracking-widest font-bold text-muted uppercase">Preferências da Conta</h3>
             <div className="flex justify-between items-center p-4 bg-paper/30 rounded-2xl border border-ink/5">
               <span className="font-sans text-sm font-medium">Perfil Público</span>
@@ -99,14 +97,18 @@ export const SettingsPage = ({
                 <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="pt-8">
-            <button onClick={onLogout} className="w-full elegant-btn-outline border-red-200 text-red-500 hover:bg-red-50">
+          <motion.div variants={itemMotion} className="pt-8">
+            <motion.button
+              {...subtleButtonMotion}
+              onClick={onLogout}
+              className="w-full elegant-btn-outline border-red-200 text-red-500 hover:bg-red-50"
+            >
               SAIR DO ESTÚDIO
-            </button>
-          </div>
-        </div>
+            </motion.button>
+          </motion.div>
+        </motion.div>
       </motion.div>
     </div>
   );

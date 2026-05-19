@@ -9,6 +9,7 @@ import { FeedPage } from './pages/FeedPage';
 import { GroupsPage } from './pages/GroupsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SubmitPage } from './pages/SubmitPage';
+import { pageMotion, subtleButtonMotion } from './lib/motion';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(() => {
@@ -85,19 +86,19 @@ export default function App() {
       <main className="pb-20">
         <AnimatePresence mode="wait">
           {page === 'login' && !user && (
-            <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="login" {...pageMotion}>
               <LoginPage onLogin={handleLogin} />
             </motion.div>
           )}
 
           {page === 'feed' && (
-            <motion.div key="feed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="feed" {...pageMotion}>
               <FeedPage user={user} onNavigateToSubmit={() => setPage('submit')} onArtistClick={navigateToArtist} />
             </motion.div>
           )}
 
           {page === 'artist-profile' && selectedArtistId && (
-            <motion.div key="artist-profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="artist-profile" {...pageMotion}>
               <div className="max-w-6xl mx-auto px-4 pt-8">
                 <button onClick={navigateToFeed} className="flex items-center gap-2 font-mono text-xs font-bold hover:text-gold transition-colors">
                   <ArrowLeft size={14} /> VOLTAR PARA GALERIA
@@ -114,7 +115,7 @@ export default function App() {
           )}
 
           {page === 'group-feed' && selectedGroup && (
-            <motion.div key="group-feed" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="group-feed" {...pageMotion}>
               <div className="max-w-6xl mx-auto px-4 pt-8">
                 <button onClick={() => setPage('groups')} className="flex items-center gap-2 font-mono text-xs font-bold hover:text-gold transition-colors">
                   <ArrowLeft size={14} /> VOLTAR PARA GRUPOS
@@ -131,19 +132,19 @@ export default function App() {
           )}
 
           {page === 'groups' && user && (
-            <motion.div key="groups" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="groups" {...pageMotion}>
               <GroupsPage user={user} onSelectGroup={navigateToGroup} initialSearchQuery={globalSearchQuery} />
             </motion.div>
           )}
 
           {page === 'submit' && user && (
-            <motion.div key="submit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="submit" {...pageMotion}>
               <SubmitPage user={user} groupId={selectedGroup?.id} onComplete={() => setPage(selectedGroup ? 'group-feed' : 'feed')} />
             </motion.div>
           )}
 
           {page === 'settings' && user && (
-            <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div key="settings" {...pageMotion}>
               <SettingsPage user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} />
             </motion.div>
           )}
@@ -151,19 +152,24 @@ export default function App() {
       </main>
 
       {user && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 sm:hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 24, x: '-50%' }}
+          animate={{ opacity: 1, y: 0, x: '-50%' }}
+          exit={{ opacity: 0, y: 20, x: '-50%' }}
+          className="fixed bottom-8 left-1/2 z-50 sm:hidden"
+        >
           <div className="bg-ink/90 backdrop-blur-md text-paper rounded-full shadow-2xl p-2 flex gap-2 border border-paper/10">
-            <button onClick={() => setPage('feed')} className={`p-4 rounded-full transition-colors ${page === 'feed' ? 'bg-gold text-ink' : 'hover:bg-paper/10'}`}>
+            <motion.button {...subtleButtonMotion} onClick={() => setPage('feed')} className={`p-4 rounded-full transition-colors ${page === 'feed' ? 'bg-gold text-ink' : 'hover:bg-paper/10'}`}>
               <LayoutGrid size={20} />
-            </button>
-            <button onClick={() => setPage('groups')} className={`p-4 rounded-full transition-colors ${page === 'groups' || page === 'group-feed' ? 'bg-gold text-ink' : 'hover:bg-paper/10'}`}>
+            </motion.button>
+            <motion.button {...subtleButtonMotion} onClick={() => setPage('groups')} className={`p-4 rounded-full transition-colors ${page === 'groups' || page === 'group-feed' ? 'bg-gold text-ink' : 'hover:bg-paper/10'}`}>
               <Users size={20} />
-            </button>
-            <button onClick={() => setPage('submit')} className={`p-4 rounded-full transition-colors ${page === 'submit' ? 'bg-gold text-ink' : 'hover:bg-paper/10'}`}>
+            </motion.button>
+            <motion.button {...subtleButtonMotion} onClick={() => setPage('submit')} className={`p-4 rounded-full transition-colors ${page === 'submit' ? 'bg-gold text-ink' : 'hover:bg-paper/10'}`}>
               <Plus size={20} />
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );
