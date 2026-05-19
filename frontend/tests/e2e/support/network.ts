@@ -164,6 +164,14 @@ export async function mockGroups(
     });
   });
 
+  await page.route('**/group/public', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(publicGroups),
+    });
+  });
+
   await page.route('**/api/groups/search**', async (route) => {
     await route.fulfill({
       status: 200,
