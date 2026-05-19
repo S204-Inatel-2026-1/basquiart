@@ -67,6 +67,14 @@ export const FeedPage = ({
       return;
     }
 
+    if (user) {
+      api.posts.listPublic(1, 10, userId)
+        .then(data => setArtworks(data))
+        .catch(err => { console.error(err); setArtworks([]); })
+        .finally(() => setLoading(false));
+      return;
+    }
+
     let url = '/api/artworks';
     if (groupId) url = `/api/artworks?group_id=${groupId}`;
     else if (userId) url = `/api/artworks?user_id=${userId}`;
