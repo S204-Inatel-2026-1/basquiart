@@ -9,6 +9,14 @@ export type AuthResponse = {
   user?: User;
 };
 
+export type GroupInviteSummary = {
+  id: number;
+  senderId: number;
+  receiverId: number;
+  groupId: number;
+  createdAt: string;
+};
+
 type BackendGroupSummary = {
   groupId: number;
   name: string;
@@ -64,6 +72,14 @@ type BackendPublicGroup = {
 
 type BackendInvite = {
   id: number;
+};
+
+type BackendInviteSummary = {
+  id: number;
+  senderId: number;
+  receiverId: number;
+  groupId: number;
+  createdAt?: string;
 };
 
 type BackendComment = {
@@ -380,6 +396,17 @@ export const groupApi = {
       }),
     });
     return response.id;
+  },
+
+  async listInvites(): Promise<GroupInviteSummary[]> {
+    const response = await requestWithAuth<BackendInviteSummary[]>('/group/invites');
+    return response.map((invite) => ({
+      id: invite.id,
+      senderId: invite.senderId,
+      receiverId: invite.receiverId,
+      groupId: invite.groupId,
+      createdAt: invite.createdAt || new Date().toISOString(),
+    }));
   },
 
   async acceptInvite(inviteId: number): Promise<void> {
