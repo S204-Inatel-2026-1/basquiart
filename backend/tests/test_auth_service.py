@@ -1,5 +1,6 @@
 import pytest
 from types import SimpleNamespace
+from datetime import datetime
 
 
 @pytest.mark.asyncio
@@ -8,20 +9,24 @@ async def test_register_creates_user_and_returns_token(auth_service, mock_db, mo
     mock_db.user.create.return_value = SimpleNamespace(
         id=1,
         username="vinicius",
-        password="Senha123!"
+        password="hashed-password",
+        createdAt=datetime(2024, 1, 1),
     )
 
     result = await auth_service.register("vinicius", "Senha123!")
 
-    assert result == "fake-jwt-token"
-    mock_db.user.find_unique.assert_awaited_once_with(where={"username": "vinicius"})
-    mock_db.user.create.assert_awaited_once_with(
-        data={
-            "username": "vinicius",
-            "password": "Senha123!",
-        }
+    assert result == (
+        "fake-jwt-token",
+        "fake-refresh-token",
+        {"id": 1, "username": "vinicius", "createdAt": datetime(2024, 1, 1)},
     )
+    mock_db.user.find_unique.assert_awaited_once_with(where={"username": "vinicius"})
+    create_payload = mock_db.user.create.await_args.kwargs["data"]
+    assert create_payload["username"] == "vinicius"
+    assert create_payload["password"] != "Senha123!"
+    assert create_payload["password"].startswith("$2")
     mock_jwt_handler.create_token.assert_called_once_with(1)
+    mock_jwt_handler.create_refresh_token.assert_called_once_with(1)
 
 
 @pytest.mark.asyncio
@@ -45,14 +50,21 @@ async def test_login_returns_token_with_valid_credentials(auth_service, mock_db,
     mock_db.user.find_unique.return_value = SimpleNamespace(
         id=2,
         username="maria",
-        password="Senha123!"
+        password=auth_service._hash_password("Senha123!"),
+        createdAt=datetime(2024, 1, 1),
     )
 
     result = await auth_service.login("maria", "Senha123!")
 
-    assert result == "fake-jwt-token"
+    assert result == (
+        "fake-jwt-token",
+        "fake-refresh-token",
+        {"id": 2, "username": "maria", "createdAt": datetime(2024, 1, 1)},
+    )
     mock_db.user.find_unique.assert_awaited_once_with(where={"username": "maria"})
+    mock_db.user.update.assert_not_awaited()
     mock_jwt_handler.create_token.assert_called_once_with(2)
+    mock_jwt_handler.create_refresh_token.assert_called_once_with(2)
 
 
 @pytest.mark.asyncio
