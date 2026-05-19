@@ -109,3 +109,53 @@ test('permite cadastro de um novo usuário pelo fluxo principal', async ({ page 
   await expect(page.getByRole('button', { name: /ENVIAR ARTE/i })).toBeVisible();
   await expect(page.getByText('A galeria aguarda sua primeira pincelada.')).toBeVisible();
 });
+
+test('mostra erro de integracao quando /group/public falha sem usar fallback legado', async ({ page }) => {
+  const token = createFakeJwt({ sub: '12' });
+  let legacyFallbackCalled = false;
+
+  await page.addInitScript(({ authToken }) => {
+    localStorage.setItem('basquiart_jwt_token', authToken);
+    localStorage.setItem(
+      'basquiart_user',
+      JSON.stringify({
+        id: 12,
+        username: 'grupo-teste',
+        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=grupo-teste',
+      })
+    );
+  }, { authToken: token });
+
+  await page.route('**/group/', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    });
+  });
+
+  await page.route('**/group/public', async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ detail: 'Backend indisponivel.' }),
+    });
+  });
+
+  await page.route('**/api/groups/public', async (route) => {
+    legacyFallbackCalled = true;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    });
+  });
+
+  await page.goto('/');
+  await page.getByTitle('Grupos').click();
+
+  await expect(
+    page.getByText(/Falha de integracao ao carregar coletivos publicos: Backend indisponivel\./i)
+  ).toBeVisible();
+  await expect.poll(() => legacyFallbackCalled).toBe(false);
+});
