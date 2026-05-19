@@ -424,20 +424,6 @@ export const postApi = {
     return response.posts.map(mapPostToArtwork);
   },
 
-  async listPublic(page = 1, pageSize = 10, authorId?: number): Promise<Artwork[]> {
-    const params = new URLSearchParams({
-      page: String(page),
-      page_size: String(pageSize),
-    });
-
-    if (authorId) {
-      params.set('author_id', String(authorId));
-    }
-
-    const response = await requestWithAuth<BackendPaginatedPosts>(`/posts/public?${params.toString()}`);
-    return response.posts.map(mapPostToArtwork);
-  },
-
   async createInGroup(
     groupId: number,
     payload: { title: string; description: string; image: File }

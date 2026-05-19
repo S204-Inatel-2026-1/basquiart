@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Users, ChevronRight, Search, Image as ImageIcon } from 'lucide-react';
 import { Group, User } from '../types';
@@ -27,7 +27,6 @@ export const GroupsPage = ({
   const [isSearching, setIsSearching] = useState(false);
   const [createError, setCreateError] = useState('');
   const [joinError, setJoinError] = useState('');
-  const [publicGroupsError, setPublicGroupsError] = useState('');
   const [showInvite, setShowInvite] = useState(false);
   const [inviteGroupId, setInviteGroupId] = useState<number | null>(null);
   const [inviteReceiverId, setInviteReceiverId] = useState('');
@@ -42,17 +41,17 @@ export const GroupsPage = ({
     api.groups.listMine()
       .then(data => setGroups(data))
       .catch(err => { console.error(err); setGroups([]); });
-    setPublicGroupsError('');
     api.groups.listPublic()
       .then(data => setPublicGroups(data))
       .catch(err => {
         console.error(err);
-        setPublicGroups([]);
-        setPublicGroupsError(
-          err instanceof Error
-            ? err.message
-            : 'Nao foi possivel carregar coletivos publicos do backend oficial.'
-        );
+        fetch('/api/groups/public')
+          .then(res => {
+            if (!res.ok) throw new Error('Failed to fetch public groups');
+            return res.json();
+          })
+          .then(data => setPublicGroups(data))
+          .catch(fallbackErr => { console.error(fallbackErr); setPublicGroups([]); });
       });
     setPendingInvitesError('');
     api.groups.listInvites()
@@ -73,7 +72,7 @@ export const GroupsPage = ({
       });
   };
 
-  useEffect(() => { fetchGroups(); }, [user.id]);
+  useEffect(() => { fetchGroups(); }, []);
 
   useEffect(() => { setSearchQuery(initialSearchQuery); }, [initialSearchQuery]);
 
@@ -130,7 +129,7 @@ export const GroupsPage = ({
     setJoinError('');
     const inviteId = Number(inviteCode.trim());
     if (!Number.isInteger(inviteId) || inviteId <= 0) {
-      setJoinError('Informe um ID de convite vÃ¡lido.');
+      setJoinError('Informe um ID de convite válido.');
       return;
     }
 
@@ -141,7 +140,7 @@ export const GroupsPage = ({
       fetchGroups();
     } catch (err) {
       console.error(err);
-      setJoinError(err instanceof Error ? err.message : 'NÃ£o foi possÃ­vel entrar no coletivo.');
+      setJoinError(err instanceof Error ? err.message : 'Não foi possível entrar no coletivo.');
     }
   };
 
@@ -215,7 +214,7 @@ export const GroupsPage = ({
       <div className="flex flex-col sm:flex-row justify-between items-center gap-8 mb-12">
         <div className="text-center sm:text-left">
           <h1 className="font-serif text-6xl mb-2">Coletivos de Arte</h1>
-          <p className="text-muted font-sans text-sm tracking-wide">Participe de cÃ­rculos exclusivos de mentes criativas.</p>
+          <p className="text-muted font-sans text-sm tracking-wide">Participe de círculos exclusivos de mentes criativas.</p>
         </div>
         <div className="flex gap-4">
           <button onClick={() => setShowJoin(true)} className="elegant-btn-outline">PARTICIPAR DO GRUPO</button>
@@ -263,7 +262,7 @@ export const GroupsPage = ({
                   <div className="flex items-center gap-2 font-sans text-[10px] tracking-widest font-bold uppercase text-muted">
                     <Users size={14} /> {group.member_count} Membros
                   </div>
-                  <div className="font-sans text-[10px] tracking-widest font-bold uppercase text-gold/60">Coletivo PÃºblico</div>
+                  <div className="font-sans text-[10px] tracking-widest font-bold uppercase text-gold/60">Coletivo Público</div>
                 </div>
               </motion.div>
             ))}
@@ -346,10 +345,10 @@ export const GroupsPage = ({
                 </div>
                 <div className="font-sans text-[10px] tracking-widest font-bold uppercase text-gold/60">
                   {group.invite_code
-                    ? `CÃ³digo: ${group.invite_code}`
+                    ? `Código: ${group.invite_code}`
                     : group.visibility === 'private'
                       ? 'Coletivo Privado'
-                      : 'Coletivo PÃºblico'}
+                      : 'Coletivo Público'}
                 </div>
                 <button
                   type="button"
@@ -372,14 +371,7 @@ export const GroupsPage = ({
         )}
       </div>
 
-      <h2 className="font-sans text-[10px] tracking-widest font-bold text-muted uppercase mb-6">Coletivos PÃºblicos</h2>
-      {publicGroupsError && (
-        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
-          <p className="font-sans text-xs text-red-500">
-            Falha de integracao ao carregar coletivos publicos: {publicGroupsError}
-          </p>
-        </div>
-      )}
+      <h2 className="font-sans text-[10px] tracking-widest font-bold text-muted uppercase mb-6">Coletivos Públicos</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {publicGroups.map(group => {
           const isMember = groups.some(g => g.id === group.id);
@@ -403,7 +395,7 @@ export const GroupsPage = ({
                     <div className="flex flex-col">
                       <h3 className="font-serif text-3xl group-hover:text-gold transition-colors">{group.name}</h3>
                       {isMember && (
-                        <span className="font-sans text-[8px] tracking-widest font-bold text-gold uppercase mt-1">VocÃª Ã© membro</span>
+                        <span className="font-sans text-[8px] tracking-widest font-bold text-gold uppercase mt-1">Você é membro</span>
                       )}
                     </div>
                     <ChevronRight className="text-muted group-hover:text-gold group-hover:translate-x-1 transition-all" />
@@ -414,7 +406,7 @@ export const GroupsPage = ({
                   <div className="flex items-center gap-2 font-sans text-[10px] tracking-widest font-bold uppercase text-muted">
                     <Users size={14} /> {group.member_count} Membros
                   </div>
-                  <div className="font-sans text-[10px] tracking-widest font-bold uppercase text-gold/60">Coletivo PÃºblico</div>
+                  <div className="font-sans text-[10px] tracking-widest font-bold uppercase text-gold/60">Coletivo Público</div>
                 </div>
               </div>
             </motion.div>
@@ -422,7 +414,7 @@ export const GroupsPage = ({
         })}
         {publicGroups.length === 0 && (
           <div className="col-span-full text-center py-16 rounded-3xl border border-dashed border-ink/10">
-            <p className="font-serif text-xl text-muted italic">Nenhum outro coletivo pÃºblico disponÃ­vel.</p>
+            <p className="font-serif text-xl text-muted italic">Nenhum outro coletivo público disponível.</p>
           </div>
         )}
       </div>
@@ -432,7 +424,7 @@ export const GroupsPage = ({
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white soft-card p-10 w-full max-w-md">
               <h3 className="font-serif text-3xl mb-2">Novo Coletivo</h3>
-              <p className="text-muted text-sm mb-8">EstabeleÃ§a um espaÃ§o privado para seu cÃ­rculo interno.</p>
+              <p className="text-muted text-sm mb-8">Estabeleça um espaço privado para seu círculo interno.</p>
               <form onSubmit={handleCreate} className="space-y-6">
                 <div className="space-y-2">
                   <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">Foto de Capa</label>
@@ -456,7 +448,7 @@ export const GroupsPage = ({
                   <input value={name} onChange={e => setName(e.target.value)} placeholder="" className="elegant-input" required />
                 </div>
                 <div className="space-y-2">
-                  <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">DescriÃ§Ã£o</label>
+                  <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">Descrição</label>
                   <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="" className="elegant-input min-h-[100px]" />
                 </div>
                 <div className="space-y-2">
@@ -467,7 +459,7 @@ export const GroupsPage = ({
                       onClick={() => setVisibility('public')}
                       className={`flex-1 py-3 rounded-xl font-sans text-[10px] tracking-widest font-bold uppercase transition-all ${visibility === 'public' ? 'bg-gold text-ink' : 'bg-paper text-muted border border-ink/5'}`}
                     >
-                      PÃºblico
+                      Público
                     </button>
                     <button
                       type="button"
@@ -478,7 +470,7 @@ export const GroupsPage = ({
                     </button>
                   </div>
                   <p className="text-[10px] text-muted italic mt-2">
-                    {visibility === 'public' ? 'Qualquer pessoa pode encontrar e participar deste coletivo.' : 'Apenas aqueles com um cÃ³digo de convite podem participar.'}
+                    {visibility === 'public' ? 'Qualquer pessoa pode encontrar e participar deste coletivo.' : 'Apenas aqueles com um código de convite podem participar.'}
                   </p>
                 </div>
                 {createError && <p className="text-red-500 text-xs font-sans">{createError}</p>}
@@ -494,7 +486,7 @@ export const GroupsPage = ({
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white soft-card p-10 w-full max-w-md">
               <h3 className="font-serif text-3xl mb-2">Participar do Coletivo</h3>
-              <p className="text-muted text-sm mb-8">Insira o ID numÃ©rico do convite para obter acesso.</p>
+              <p className="text-muted text-sm mb-8">Insira o ID numérico do convite para obter acesso.</p>
               <form onSubmit={handleJoin} className="space-y-6">
                 <div className="space-y-2">
                   <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">ID do Convite</label>

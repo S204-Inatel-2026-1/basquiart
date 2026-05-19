@@ -156,7 +156,7 @@ export async function mockGroups(
     });
   });
 
-  await page.route('**/group/public', async (route) => {
+  await page.route('**/api/groups/public', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
