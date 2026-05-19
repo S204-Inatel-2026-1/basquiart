@@ -235,6 +235,73 @@ async def test_list_groups_success(group_service, mock_db):
 
 
 # ============================================================================
+# TEST: list_public_groups
+# ============================================================================
+
+@pytest.mark.asyncio
+async def test_list_public_groups_excludes_user_groups(group_service, mock_db):
+    """Deve listar apenas grupos publicos que o usuario ainda nao participa"""
+    mock_db.groupmember.find_many.return_value = [
+        SimpleNamespace(userId=1, groupId=1, role="MEMBER"),
+    ]
+    mock_db.group.find_many.return_value = [
+        SimpleNamespace(
+            id=1,
+            name="Grupo ja participo",
+            description="Nao deve aparecer",
+            visibility="PUBLIC",
+            createdAt="2026-05-19",
+            members=[
+                SimpleNamespace(userId=9, role="OWNER"),
+                SimpleNamespace(userId=1, role="MEMBER"),
+            ],
+        ),
+        SimpleNamespace(
+            id=2,
+            name="Coletivo Aberto",
+            description=None,
+            visibility="PUBLIC",
+            createdAt="2026-05-19",
+            members=[
+                SimpleNamespace(userId=3, role="OWNER"),
+                SimpleNamespace(userId=4, role="MEMBER"),
+            ],
+        ),
+    ]
+
+    result = await group_service.list_public_groups(1)
+
+    assert len(result) == 1
+    assert result[0]["id"] == 2
+    assert result[0]["name"] == "Coletivo Aberto"
+    assert result[0]["description"] == ""
+    assert result[0]["member_count"] == 2
+    assert result[0]["visibility"] == "public"
+    assert result[0]["creator_id"] == 3
+
+
+@pytest.mark.asyncio
+async def test_list_public_groups_without_owner_uses_zero_creator_id(group_service, mock_db):
+    """Deve retornar creator_id zero quando grupo publico nao tem owner carregado"""
+    mock_db.groupmember.find_many.return_value = []
+    mock_db.group.find_many.return_value = [
+        SimpleNamespace(
+            id=3,
+            name="Grupo Sem Owner",
+            description="Aberto",
+            visibility="PUBLIC",
+            createdAt="2026-05-19",
+            members=[SimpleNamespace(userId=5, role="MEMBER")],
+        ),
+    ]
+
+    result = await group_service.list_public_groups(1)
+
+    assert result[0]["creator_id"] == 0
+    assert result[0]["cover_url"] is None
+
+
+# ============================================================================
 # TEST: remove_member
 # ============================================================================
 

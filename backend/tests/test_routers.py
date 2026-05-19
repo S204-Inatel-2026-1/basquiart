@@ -125,6 +125,79 @@ def test_group_create_success():
         })
         
         assert response.status_code == 201
+        mock_create.assert_called_once_with(1, "Test Group", "Test", "private")
+
+
+def test_group_send_invite_success():
+    """Test sending group invite endpoint"""
+    from features.group.router import router as group_router
+    from features.auth.utils import get_current_user
+
+    app = FastAPI()
+
+    async def mock_get_current_user():
+        return 1
+
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+    app.include_router(group_router)
+    client = TestClient(app)
+
+    with patch("features.group.router.service.send_invite") as mock_invite:
+        mock_invite.return_value = SimpleNamespace(id=10, groupId=2, receiverId=3)
+
+        response = client.post("/group/invite", json={
+            "group_id": 2,
+            "receiverId": 3,
+        })
+
+        assert response.status_code == 200
+        mock_invite.assert_called_once_with(1, 2, 3)
+
+
+def test_group_list_invites_success():
+    """Test listing group invites endpoint"""
+    from features.group.router import router as group_router
+    from features.auth.utils import get_current_user
+
+    app = FastAPI()
+
+    async def mock_get_current_user():
+        return 1
+
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+    app.include_router(group_router)
+    client = TestClient(app)
+
+    with patch("features.group.router.service.list_invites") as mock_list:
+        mock_list.return_value = [SimpleNamespace(id=10, receiverId=1)]
+
+        response = client.get("/group/invites")
+
+        assert response.status_code == 200
+        mock_list.assert_called_once_with(1)
+
+
+def test_group_accept_invite_success():
+    """Test accepting group invite endpoint"""
+    from features.group.router import router as group_router
+    from features.auth.utils import get_current_user
+
+    app = FastAPI()
+
+    async def mock_get_current_user():
+        return 1
+
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+    app.include_router(group_router)
+    client = TestClient(app)
+
+    with patch("features.group.router.service.accept_invite") as mock_accept:
+        mock_accept.return_value = SimpleNamespace(userId=1, groupId=2, role="MEMBER")
+
+        response = client.post("/group/invites/10/accept")
+
+        assert response.status_code == 200
+        mock_accept.assert_called_once_with(1, 10)
 
 
 def test_group_list_success():
@@ -150,6 +223,54 @@ def test_group_list_success():
         response = client.get("/group/")
         
         assert response.status_code == 200
+        mock_list.assert_called_once_with(1)
+
+
+def test_group_list_public_success():
+    """Test listing public groups endpoint"""
+    from features.group.router import router as group_router
+    from features.auth.utils import get_current_user
+
+    app = FastAPI()
+
+    async def mock_get_current_user():
+        return 1
+
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+    app.include_router(group_router)
+    client = TestClient(app)
+
+    with patch("features.group.router.service.list_public_groups") as mock_public:
+        mock_public.return_value = [
+            {"id": 2, "name": "Public Group", "visibility": "public"},
+        ]
+
+        response = client.get("/group/public")
+
+        assert response.status_code == 200
+        assert response.json()[0]["name"] == "Public Group"
+        mock_public.assert_called_once_with(1)
+
+
+def test_group_remove_member_success():
+    """Test removing group member endpoint"""
+    from features.group.router import router as group_router
+    from features.auth.utils import get_current_user
+
+    app = FastAPI()
+
+    async def mock_get_current_user():
+        return 1
+
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+    app.include_router(group_router)
+    client = TestClient(app)
+
+    with patch("features.group.router.service.remove_member") as mock_remove:
+        response = client.delete("/group/2/members/3")
+
+        assert response.status_code == 204
+        mock_remove.assert_called_once_with(1, 2, 3)
 
 
 def test_group_delete_success():
@@ -166,10 +287,11 @@ def test_group_delete_success():
     app.include_router(group_router)
     client = TestClient(app)
     
-    with patch("features.group.router.service.delete_group"):
+    with patch("features.group.router.service.delete_group") as mock_delete:
         response = client.delete("/group/1")
         
         assert response.status_code == 204
+        mock_delete.assert_called_once_with(1, 1)
 
 
 # ============ POST ROUTER TESTS ============
@@ -213,6 +335,31 @@ def test_post_get_posts_success():
         response = client.get("/posts/1?page=1&page_size=10")
         
         assert response.status_code == 200
+        mock_get.assert_called_once_with(1, 1, 1, 10)
+
+
+def test_post_make_post_success():
+    """Test creating post endpoint"""
+    from features.post.router import router as post_router
+    from features.auth.utils import get_current_user
+
+    app = FastAPI()
+
+    async def mock_get_current_user():
+        return 1
+
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+    app.include_router(post_router)
+    client = TestClient(app)
+
+    with patch("features.post.router.service.make_post") as mock_make:
+        mock_make.return_value = {"id": 5, "content": "New artwork", "groupId": 2}
+
+        response = client.post("/posts/2", data={"content": "New artwork"})
+
+        assert response.status_code == 201
+        mock_make.assert_called_once()
+        assert mock_make.call_args.args[0:3] == (1, 2, "New artwork")
 
 
 def test_post_toggle_like_success():
@@ -236,6 +383,7 @@ def test_post_toggle_like_success():
         
         assert response.status_code == 200
         assert response.json()["liked"] is True
+        mock_like.assert_called_once_with(1, 1)
 
 
 def test_post_delete_success():
@@ -252,10 +400,98 @@ def test_post_delete_success():
     app.include_router(post_router)
     client = TestClient(app)
     
-    with patch("features.post.router.service.delete_post"):
+    with patch("features.post.router.service.delete_post") as mock_delete:
         response = client.delete("/posts/1")
         
         assert response.status_code == 204
+        mock_delete.assert_called_once_with(1, 1)
+
+
+def test_post_get_comments_success():
+    """Test getting post comments endpoint"""
+    from features.post.router import router as post_router
+    from features.auth.utils import get_current_user
+
+    app = FastAPI()
+
+    async def mock_get_current_user():
+        return 1
+
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+    app.include_router(post_router)
+    client = TestClient(app)
+
+    with patch("features.post.router.service.get_comments") as mock_comments:
+        mock_comments.return_value = [
+            {
+                "id": 1,
+                "content": "Nice",
+                "createdAt": "2024-01-01T00:00:00",
+                "userId": 2,
+                "postId": 1,
+                "user": {"id": 2, "username": "bob"},
+            },
+        ]
+
+        response = client.get("/posts/1/comments")
+
+        assert response.status_code == 200
+        assert response.json()[0]["content"] == "Nice"
+        mock_comments.assert_called_once_with(1, 1)
+
+
+def test_post_create_comment_success():
+    """Test creating post comment endpoint"""
+    from features.post.router import router as post_router
+    from features.auth.utils import get_current_user
+
+    app = FastAPI()
+
+    async def mock_get_current_user():
+        return 1
+
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+    app.include_router(post_router)
+    client = TestClient(app)
+
+    with patch("features.post.router.service.create_comment") as mock_create:
+        mock_create.return_value = {
+            "id": 2,
+            "content": "Great",
+            "createdAt": "2024-01-01T00:00:00",
+            "userId": 1,
+            "postId": 1,
+            "user": {"id": 1, "username": "alice"},
+        }
+
+        response = client.post("/posts/1/comments", json={"content": "Great"})
+
+        assert response.status_code == 201
+        assert response.json()["content"] == "Great"
+        mock_create.assert_called_once_with(1, 1, "Great")
+
+
+def test_post_service_error_returns_400():
+    """Test router maps service ValueError to HTTP 400"""
+    from features.post.router import router as post_router
+    from features.auth.utils import get_current_user
+
+    app = FastAPI()
+
+    async def mock_get_current_user():
+        return 1
+
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+    app.include_router(post_router)
+    client = TestClient(app)
+
+    with patch("features.post.router.service.toggle_like") as mock_like:
+        mock_like.side_effect = ValueError("Post not found")
+
+        response = client.post("/posts/404/like")
+
+        assert response.status_code == 400
+        assert response.json()["detail"] == "Post not found"
 
 
 def test_post_rate_post_success():

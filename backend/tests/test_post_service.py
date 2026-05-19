@@ -35,6 +35,7 @@ def mock_db():
         ),
         postcomment=SimpleNamespace(
             find_many=AsyncMock(),
+            create=AsyncMock(),
         ),
         ratingcategory=SimpleNamespace(
             find_unique=AsyncMock(),
@@ -397,6 +398,65 @@ async def test_get_comments_user_not_member(post_service, mock_db):
 
     with pytest.raises(ValueError, match="not a member"):
         await post_service.get_comments(user_id=1, post_id=1)
+
+
+# ============ create_comment ============
+
+@pytest.mark.asyncio
+async def test_create_comment_success_trims_content(post_service, mock_db):
+    """Test creating a comment trims content and stores it"""
+    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1)
+    mock_db.groupmember.find_unique.return_value = MagicMock()
+    mock_db.postcomment.create.return_value = SimpleNamespace(
+        id=10,
+        content="Great post!",
+        userId=1,
+        postId=1,
+        user=SimpleNamespace(id=1, username="alice"),
+    )
+
+    result = await post_service.create_comment(
+        user_id=1,
+        post_id=1,
+        content="  Great post!  ",
+    )
+
+    assert result.id == 10
+    mock_db.postcomment.create.assert_called_once_with(
+        data={"content": "Great post!", "userId": 1, "postId": 1},
+        include={"user": True},
+    )
+
+
+@pytest.mark.asyncio
+async def test_create_comment_post_not_found(post_service, mock_db):
+    """Test creating comment on non-existent post"""
+    mock_db.post.find_unique.return_value = None
+
+    with pytest.raises(ValueError, match="Post not found"):
+        await post_service.create_comment(user_id=1, post_id=999, content="Nice")
+
+
+@pytest.mark.asyncio
+async def test_create_comment_user_not_member(post_service, mock_db):
+    """Test non-member cannot create comments"""
+    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1)
+    mock_db.groupmember.find_unique.return_value = None
+
+    with pytest.raises(ValueError, match="not a member"):
+        await post_service.create_comment(user_id=1, post_id=1, content="Nice")
+
+
+@pytest.mark.asyncio
+async def test_create_comment_empty_after_trim(post_service, mock_db):
+    """Test empty comments are rejected after whitespace trimming"""
+    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1)
+    mock_db.groupmember.find_unique.return_value = MagicMock()
+
+    with pytest.raises(ValueError, match="Comment cannot be empty"):
+        await post_service.create_comment(user_id=1, post_id=1, content="   ")
+
+    mock_db.postcomment.create.assert_not_called()
 
 
 # ============ Utility Functions ============
