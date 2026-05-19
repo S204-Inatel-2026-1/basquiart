@@ -251,9 +251,9 @@ test('cria convite para usuario a partir de coletivo proprio', async ({ page }) 
   const hasInviteModal = await inviteModal.isVisible({ timeout: 1000 }).catch(() => false);
 
   if (hasInviteModal) {
-    const form = page.locator('.fixed form').filter({ has: inviteModal });
-    await form.locator('input.elegant-input').fill('99');
-    await form.getByRole('button', { name: 'ENVIAR CONVITE' }).click();
+    const modal = page.locator('.fixed').filter({ has: inviteModal }).first();
+    await modal.locator('input.elegant-input').fill('99');
+    await modal.getByRole('button', { name: 'ENVIAR CONVITE' }).click();
     await expect(page.getByText('Convite criado com sucesso. ID do convite: 77')).toBeVisible();
   }
 
