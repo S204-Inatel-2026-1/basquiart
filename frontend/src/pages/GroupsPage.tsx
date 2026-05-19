@@ -35,9 +35,11 @@ export const GroupsPage = ({
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
   const [pendingInvites, setPendingInvites] = useState<GroupInviteSummary[]>([]);
   const [pendingInvitesError, setPendingInvitesError] = useState('');
+  const [pendingInvitesSuccess, setPendingInvitesSuccess] = useState('');
+  const [isLoadingInvites, setIsLoadingInvites] = useState(true);
   const [acceptingInviteId, setAcceptingInviteId] = useState<number | null>(null);
 
-  const fetchGroups = () => {
+  const fetchGroups = (options: { clearInviteFeedback?: boolean } = { clearInviteFeedback: true }) => {
     api.groups.listMine()
       .then(data => setGroups(data))
       .catch(err => { console.error(err); setGroups([]); });
@@ -54,6 +56,10 @@ export const GroupsPage = ({
           .catch(fallbackErr => { console.error(fallbackErr); setPublicGroups([]); });
       });
     setPendingInvitesError('');
+    if (options.clearInviteFeedback) {
+      setPendingInvitesSuccess('');
+    }
+    setIsLoadingInvites(true);
     api.groups.listInvites()
       .then(data => {
         const pending = data
@@ -69,6 +75,9 @@ export const GroupsPage = ({
             ? err.message
             : 'Nao foi possivel carregar convites pendentes.'
         );
+      })
+      .finally(() => {
+        setIsLoadingInvites(false);
       });
   };
 
@@ -192,11 +201,13 @@ export const GroupsPage = ({
 
   const handleAcceptPendingInvite = async (inviteId: number) => {
     setPendingInvitesError('');
+    setPendingInvitesSuccess('');
     setAcceptingInviteId(inviteId);
     try {
       await api.groups.acceptInvite(inviteId);
       setPendingInvites((previous) => previous.filter((invite) => invite.id !== inviteId));
-      fetchGroups();
+      setPendingInvitesSuccess('Convite aceito com sucesso.');
+      fetchGroups({ clearInviteFeedback: false });
     } catch (err) {
       console.error(err);
       setPendingInvitesError(
@@ -278,6 +289,13 @@ export const GroupsPage = ({
           </p>
         </div>
       )}
+      {pendingInvitesSuccess && (
+        <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-4 py-3">
+          <p className="font-sans text-xs text-green-700">
+            {pendingInvitesSuccess}
+          </p>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
         {pendingInvites.map((invite) => (
           <motion.div
@@ -308,7 +326,12 @@ export const GroupsPage = ({
             </div>
           </motion.div>
         ))}
-        {pendingInvites.length === 0 && (
+        {isLoadingInvites && (
+          <div className="col-span-full text-center py-16 rounded-3xl border border-dashed border-ink/10">
+            <p className="font-serif text-xl text-muted italic">Carregando convites pendentes...</p>
+          </div>
+        )}
+        {!isLoadingInvites && pendingInvites.length === 0 && (
           <div className="col-span-full text-center py-16 rounded-3xl border border-dashed border-ink/10">
             <p className="font-serif text-xl text-muted italic">Nenhum convite pendente no momento.</p>
           </div>
