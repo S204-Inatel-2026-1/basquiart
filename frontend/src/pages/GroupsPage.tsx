@@ -35,6 +35,7 @@ export const GroupsPage = ({
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
   const [pendingInvites, setPendingInvites] = useState<GroupInviteSummary[]>([]);
   const [pendingInvitesError, setPendingInvitesError] = useState('');
+  const [isLoadingInvites, setIsLoadingInvites] = useState(true);
   const [acceptingInviteId, setAcceptingInviteId] = useState<number | null>(null);
 
   const fetchGroups = () => {
@@ -54,6 +55,7 @@ export const GroupsPage = ({
           .catch(fallbackErr => { console.error(fallbackErr); setPublicGroups([]); });
       });
     setPendingInvitesError('');
+    setIsLoadingInvites(true);
     api.groups.listInvites()
       .then(data => {
         const pending = data
@@ -69,6 +71,9 @@ export const GroupsPage = ({
             ? err.message
             : 'Nao foi possivel carregar convites pendentes.'
         );
+      })
+      .finally(() => {
+        setIsLoadingInvites(false);
       });
   };
 
@@ -308,7 +313,12 @@ export const GroupsPage = ({
             </div>
           </motion.div>
         ))}
-        {pendingInvites.length === 0 && (
+        {isLoadingInvites && (
+          <div className="col-span-full text-center py-16 rounded-3xl border border-dashed border-ink/10">
+            <p className="font-serif text-xl text-muted italic">Carregando convites pendentes...</p>
+          </div>
+        )}
+        {!isLoadingInvites && pendingInvites.length === 0 && (
           <div className="col-span-full text-center py-16 rounded-3xl border border-dashed border-ink/10">
             <p className="font-serif text-xl text-muted italic">Nenhum convite pendente no momento.</p>
           </div>
