@@ -1,0 +1,71 @@
+name: Backend DB Integration
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-db-integration.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-db-integration.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: backend-db-integration-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  db-integration:
+    name: Prisma/PostgreSQL smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: s204
+          POSTGRES_PASSWORD: senhamuitosegura
+          POSTGRES_DB: mydb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U s204 -d mydb"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      SECRET_KEY: test-secret-key
+      RUN_DB_TESTS: '1'
+      DATABASE_URL: postgresql://s204:senhamuitosegura@localhost:5432/mydb
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install -r requirements-dev.txt
+
+      - name: Generate Prisma client
+        run: |
+          echo "$pythonLocation/bin" >> "$GITHUB_PATH"
+          python -m prisma generate
+
+      - name: Push Prisma schema
+        run: python -m prisma db push
+
+      - name: Run DB integration tests
+        run: python -m pytest tests/integration -q -rs

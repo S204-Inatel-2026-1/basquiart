@@ -57,3 +57,25 @@ wipeDB.bat
 ```
 
 ---
+
+## Testes
+
+### Suite rapida com coverage
+
+```bash
+venv\Scripts\python -m pytest tests -q --cov=features --cov-report=term-missing --cov-report=xml --cov-report=html
+```
+
+### Integracao com PostgreSQL real
+
+```bash
+docker compose -f database/docker-compose.yml up -d
+set PATH=%CD%\venv\Scripts;%PATH%
+set DATABASE_URL=postgresql://s204:senhamuitosegura@localhost:5432/mydb
+set RUN_DB_TESTS=1
+venv\Scripts\python -m prisma generate
+venv\Scripts\python -m prisma db push
+venv\Scripts\python -m pytest tests\integration -q -rs
+```
+
+> O `PATH` precisa incluir `venv\Scripts` antes do `prisma generate` para que o Prisma Client Python seja gerado dentro do ambiente virtual correto.

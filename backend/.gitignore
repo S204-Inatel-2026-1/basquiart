@@ -35,6 +35,11 @@ pip-selfcheck.json
 
 **/__pycache__
 
+# Coverage reports
+.coverage
+coverage.xml
+htmlcov/
+
 # AWS User-specific
 .idea/**/aws.xml
 
