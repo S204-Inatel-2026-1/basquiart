@@ -213,6 +213,12 @@ test('participa de coletivo usando id de convite', async ({ page }) => {
 });
 
 test('cria convite para usuario a partir de coletivo proprio', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.prompt = () => '99';
+    window.alert = (message?: string) => {
+      window.localStorage.setItem('last_invite_alert', String(message ?? ''));
+    };
+  });
   await setupAuthenticatedGroups(page);
 
   let invitePayload: Record<string, unknown> | null = null;
@@ -225,19 +231,6 @@ test('cria convite para usuario a partir de coletivo proprio', async ({ page }) 
     });
   });
 
-  const dialogTypes: string[] = [];
-  page.on('dialog', async (dialog) => {
-    dialogTypes.push(dialog.type());
-
-    if (dialog.type() === 'prompt') {
-      await dialog.accept('99');
-      return;
-    }
-
-    expect(dialog.message()).toContain('ID do convite: 77');
-    await dialog.accept();
-  });
-
   await openGroupsPage(page);
   await page.getByRole('button', { name: 'Convidar' }).click();
 
@@ -245,5 +238,7 @@ test('cria convite para usuario a partir de coletivo proprio', async ({ page }) 
     group_id: 10,
     receiverId: 99,
   });
-  await expect.poll(() => dialogTypes).toEqual(['prompt', 'alert']);
+  await expect
+    .poll(async () => page.evaluate(() => window.localStorage.getItem('last_invite_alert')))
+    .toContain('ID do convite: 77');
 });
