@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Upload, Share2 } from 'lucide-react';
 import { Group, User } from '../types';
 import { api } from '../services/api';
+import { itemMotion, panelMotion, staggerContainer } from '../lib/motion';
 
 export const SubmitPage = ({
   user,
@@ -94,19 +95,23 @@ export const SubmitPage = ({
 
   return (
     <div className="max-w-6xl mx-auto p-6 sm:p-12">
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="bg-white soft-card p-10 sm:p-16"
-      >
+      <motion.div {...panelMotion} className="bg-white soft-card p-10 sm:p-16">
         <div className="text-center mb-16">
           <h1 className="font-serif text-6xl mb-4">Compartilhe Sua Visão</h1>
           <p className="text-muted font-sans text-sm tracking-wide">Contribua com sua última obra-prima para o coletivo.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-          <div className="space-y-10 flex flex-col items-center">
-            <div
+        <motion.form
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start"
+        >
+          <motion.div variants={itemMotion} className="space-y-10 flex flex-col items-center">
+            <motion.div
+              whileHover={{ y: -3, scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
               className="w-full max-w-[280px] aspect-square rounded-3xl border border-dashed border-ink/10 bg-paper/50 flex flex-col items-center justify-center cursor-pointer hover:bg-gold/5 hover:border-gold/30 transition-all relative overflow-hidden group"
               onClick={() => document.getElementById('image-upload')?.click()}
             >
@@ -119,9 +124,9 @@ export const SubmitPage = ({
                 </>
               )}
               <input id="image-upload" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-            </div>
+            </motion.div>
 
-            <div className="w-full bg-paper/50 p-8 rounded-3xl border border-ink/5">
+            <motion.div variants={itemMotion} className="w-full bg-paper/50 p-8 rounded-3xl border border-ink/5">
               <h3 className="font-serif text-xl mb-6 flex items-center gap-2">
                 <Share2 size={18} className="text-gold" /> Visibilidade
               </h3>
@@ -158,11 +163,11 @@ export const SubmitPage = ({
                   </select>
                 </div>
               )}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          <div className="space-y-8">
-            <div className="space-y-2">
+          <motion.div variants={staggerContainer} className="space-y-8">
+            <motion.div variants={itemMotion} className="space-y-2">
               <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">Título</label>
               <input
                 type="text"
@@ -172,9 +177,9 @@ export const SubmitPage = ({
                 placeholder=""
                 required
               />
-            </div>
+            </motion.div>
 
-            <div className="space-y-2">
+            <motion.div variants={itemMotion} className="space-y-2">
               <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">Manifesto / Descrição</label>
               <textarea
                 value={description}
@@ -182,14 +187,15 @@ export const SubmitPage = ({
                 className="elegant-input min-h-[150px]"
                 placeholder=""
               />
-            </div>
+            </motion.div>
 
             {submitError && (
-              <p className="text-red-500 text-sm font-sans">{submitError}</p>
+              <motion.p variants={itemMotion} className="text-red-500 text-sm font-sans">{submitError}</motion.p>
             )}
 
-            <div className="pt-8">
-              <button
+            <motion.div variants={itemMotion} className="pt-8">
+              <motion.button
+                whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={
                   submitting ||
@@ -201,13 +207,13 @@ export const SubmitPage = ({
                 className="w-full elegant-btn-primary py-5 text-lg"
               >
                 {submitting ? 'Publicando...' : 'Publicar na Galeria'}
-              </button>
+              </motion.button>
               <p className="mt-6 font-sans text-[10px] text-muted text-center tracking-widest uppercase italic">
                 * A avaliação por pares começará após a publicação.
               </p>
-            </div>
-          </div>
-        </form>
+            </motion.div>
+          </motion.div>
+        </motion.form>
       </motion.div>
     </div>
   );

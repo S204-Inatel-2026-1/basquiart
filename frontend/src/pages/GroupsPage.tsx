@@ -3,6 +3,15 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Users, ChevronRight, Search, Image as ImageIcon } from 'lucide-react';
 import { Group, User } from '../types';
 import { api, type GroupInviteSummary } from '../services/api';
+import {
+  cardMotion,
+  interactiveCardMotion,
+  itemMotion,
+  modalBackdropMotion,
+  modalPanelMotion,
+  staggerContainer,
+  subtleButtonMotion,
+} from '../lib/motion';
 
 export const GroupsPage = ({
   user,
@@ -222,18 +231,28 @@ export const GroupsPage = ({
 
   return (
     <div className="max-w-5xl mx-auto p-6 sm:p-12">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-8 mb-12">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.34 }}
+        className="flex flex-col sm:flex-row justify-between items-center gap-8 mb-12"
+      >
         <div className="text-center sm:text-left">
           <h1 className="font-serif text-6xl mb-2">Coletivos de Arte</h1>
           <p className="text-muted font-sans text-sm tracking-wide">Participe de círculos exclusivos de mentes criativas.</p>
         </div>
         <div className="flex gap-4">
-          <button onClick={() => setShowJoin(true)} className="elegant-btn-outline">PARTICIPAR DO GRUPO</button>
-          <button onClick={() => setShowCreate(true)} className="elegant-btn-primary">CRIAR NOVO</button>
+          <motion.button {...subtleButtonMotion} onClick={() => setShowJoin(true)} className="elegant-btn-outline">PARTICIPAR DO GRUPO</motion.button>
+          <motion.button {...subtleButtonMotion} onClick={() => setShowCreate(true)} className="elegant-btn-primary">CRIAR NOVO</motion.button>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="mb-12 relative">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.06 }}
+        className="mb-12 relative"
+      >
         <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted" />
         <input
           type="text"
@@ -248,17 +267,17 @@ export const GroupsPage = ({
             <div className="w-5 h-5 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
           </div>
         )}
-      </div>
+      </motion.div>
 
       {searchResults.length > 0 && (
         <div className="mb-16">
           <h2 className="font-sans text-[10px] tracking-widest font-bold text-gold uppercase mb-6">Resultados da Busca</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {searchResults.map(group => (
               <motion.div
                 key={group.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+                variants={cardMotion}
+                {...interactiveCardMotion}
                 className="soft-card p-8 flex flex-col justify-between hover:border-gold/30 cursor-pointer group bg-gold/5"
                 onClick={() => onSelectGroup(group)}
               >
@@ -277,7 +296,7 @@ export const GroupsPage = ({
                 </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       )}
 
@@ -296,12 +315,12 @@ export const GroupsPage = ({
           </p>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
         {pendingInvites.map((invite) => (
           <motion.div
             key={invite.id}
-            initial={{ y: 20, opacity: 0 }}
-            whileInView={{ y: 0, opacity: 1 }}
+            variants={cardMotion}
+            {...interactiveCardMotion}
             viewport={{ once: true }}
             className="soft-card p-8 flex flex-col gap-6 border border-gold/20 bg-gold/5"
           >
@@ -315,14 +334,15 @@ export const GroupsPage = ({
               </p>
             </div>
             <div className="flex gap-3">
-              <button
+              <motion.button
+                {...subtleButtonMotion}
                 type="button"
                 onClick={() => void handleAcceptPendingInvite(invite.id)}
                 disabled={acceptingInviteId === invite.id}
                 className="elegant-btn-primary"
               >
                 {acceptingInviteId === invite.id ? 'ACEITANDO...' : 'ACEITAR'}
-              </button>
+              </motion.button>
             </div>
           </motion.div>
         ))}
@@ -336,15 +356,15 @@ export const GroupsPage = ({
             <p className="font-serif text-xl text-muted italic">Nenhum convite pendente no momento.</p>
           </div>
         )}
-      </div>
+      </motion.div>
 
       <h2 className="font-sans text-[10px] tracking-widest font-bold text-muted uppercase mb-6">Seus Coletivos</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
         {groups.map(group => (
           <motion.div
             key={group.id}
-            initial={{ y: 20, opacity: 0 }}
-            whileInView={{ y: 0, opacity: 1 }}
+            variants={cardMotion}
+            {...interactiveCardMotion}
             viewport={{ once: true }}
             className="soft-card overflow-hidden flex flex-col hover:border-gold/30 cursor-pointer group"
             onClick={() => onSelectGroup(group)}
@@ -373,7 +393,8 @@ export const GroupsPage = ({
                       ? 'Coletivo Privado'
                       : 'Coletivo Público'}
                 </div>
-                <button
+                <motion.button
+                  {...subtleButtonMotion}
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -382,7 +403,7 @@ export const GroupsPage = ({
                   className="font-sans text-[9px] tracking-widest font-bold uppercase text-muted hover:text-gold transition-colors"
                 >
                   Convidar
-                </button>
+                </motion.button>
               </div>
             </div>
           </motion.div>
@@ -392,17 +413,17 @@ export const GroupsPage = ({
             <p className="font-serif text-xl text-muted italic">Nenhum coletivo participando ainda.</p>
           </div>
         )}
-      </div>
+      </motion.div>
 
       <h2 className="font-sans text-[10px] tracking-widest font-bold text-muted uppercase mb-6">Coletivos Públicos</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {publicGroups.map(group => {
           const isMember = groups.some(g => g.id === group.id);
           return (
             <motion.div
               key={group.id}
-              initial={{ y: 20, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
+              variants={cardMotion}
+              {...interactiveCardMotion}
               viewport={{ once: true }}
               className="soft-card overflow-hidden flex flex-col hover:border-gold/30 cursor-pointer group"
               onClick={() => onSelectGroup(group)}
@@ -440,16 +461,16 @@ export const GroupsPage = ({
             <p className="font-serif text-xl text-muted italic">Nenhum outro coletivo público disponível.</p>
           </div>
         )}
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {showCreate && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white soft-card p-10 w-full max-w-md">
+          <motion.div {...modalBackdropMotion} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
+            <motion.div {...modalPanelMotion} className="bg-white soft-card p-10 w-full max-w-md">
               <h3 className="font-serif text-3xl mb-2">Novo Coletivo</h3>
               <p className="text-muted text-sm mb-8">Estabeleça um espaço privado para seu círculo interno.</p>
-              <form onSubmit={handleCreate} className="space-y-6">
-                <div className="space-y-2">
+              <motion.form variants={staggerContainer} initial="hidden" animate="show" onSubmit={handleCreate} className="space-y-6">
+                <motion.div variants={itemMotion} className="space-y-2">
                   <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">Foto de Capa</label>
                   <div
                     className="w-full h-32 rounded-xl border border-dashed border-ink/10 bg-paper/50 flex flex-col items-center justify-center cursor-pointer hover:bg-gold/5 hover:border-gold/30 transition-all relative overflow-hidden group"
@@ -465,16 +486,16 @@ export const GroupsPage = ({
                     )}
                     <input id="group-cover-upload" type="file" accept="image/*" onChange={handleCoverChange} className="hidden" />
                   </div>
-                </div>
-                <div className="space-y-2">
+                </motion.div>
+                <motion.div variants={itemMotion} className="space-y-2">
                   <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">Nome</label>
                   <input value={name} onChange={e => setName(e.target.value)} placeholder="" className="elegant-input" required />
-                </div>
-                <div className="space-y-2">
+                </motion.div>
+                <motion.div variants={itemMotion} className="space-y-2">
                   <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">Descrição</label>
                   <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="" className="elegant-input min-h-[100px]" />
-                </div>
-                <div className="space-y-2">
+                </motion.div>
+                <motion.div variants={itemMotion} className="space-y-2">
                   <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">Visibilidade</label>
                   <div className="flex gap-4">
                     <button
@@ -495,23 +516,23 @@ export const GroupsPage = ({
                   <p className="text-[10px] text-muted italic mt-2">
                     {visibility === 'public' ? 'Qualquer pessoa pode encontrar e participar deste coletivo.' : 'Apenas aqueles com um código de convite podem participar.'}
                   </p>
-                </div>
+                </motion.div>
                 {createError && <p className="text-red-500 text-xs font-sans">{createError}</p>}
-                <div className="flex gap-4 pt-4">
-                  <button type="button" onClick={() => { setShowCreate(false); setCreateError(''); }} className="flex-1 elegant-btn-outline">CANCELAR</button>
-                  <button type="submit" className="flex-1 elegant-btn-primary">CRIAR</button>
-                </div>
-              </form>
+                <motion.div variants={itemMotion} className="flex gap-4 pt-4">
+                  <motion.button {...subtleButtonMotion} type="button" onClick={() => { setShowCreate(false); setCreateError(''); }} className="flex-1 elegant-btn-outline">CANCELAR</motion.button>
+                  <motion.button {...subtleButtonMotion} type="submit" className="flex-1 elegant-btn-primary">CRIAR</motion.button>
+                </motion.div>
+              </motion.form>
             </motion.div>
-          </div>
+          </motion.div>
         )}
         {showJoin && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white soft-card p-10 w-full max-w-md">
+          <motion.div {...modalBackdropMotion} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
+            <motion.div {...modalPanelMotion} className="bg-white soft-card p-10 w-full max-w-md">
               <h3 className="font-serif text-3xl mb-2">Participar do Coletivo</h3>
               <p className="text-muted text-sm mb-8">Insira o ID numérico do convite para obter acesso.</p>
-              <form onSubmit={handleJoin} className="space-y-6">
-                <div className="space-y-2">
+              <motion.form variants={staggerContainer} initial="hidden" animate="show" onSubmit={handleJoin} className="space-y-6">
+                <motion.div variants={itemMotion} className="space-y-2">
                   <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">ID do Convite</label>
                   <input
                     value={inviteCode}
@@ -522,23 +543,23 @@ export const GroupsPage = ({
                     className="elegant-input text-center font-semibold"
                     required
                   />
-                </div>
+                </motion.div>
                 {joinError && <p className="text-red-500 text-xs font-sans">{joinError}</p>}
-                <div className="flex gap-4 pt-4">
-                  <button type="button" onClick={() => { setShowJoin(false); setJoinError(''); }} className="flex-1 elegant-btn-outline">CANCELAR</button>
-                  <button type="submit" className="flex-1 elegant-btn-primary">PARTICIPAR</button>
-                </div>
-              </form>
+                <motion.div variants={itemMotion} className="flex gap-4 pt-4">
+                  <motion.button {...subtleButtonMotion} type="button" onClick={() => { setShowJoin(false); setJoinError(''); }} className="flex-1 elegant-btn-outline">CANCELAR</motion.button>
+                  <motion.button {...subtleButtonMotion} type="submit" className="flex-1 elegant-btn-primary">PARTICIPAR</motion.button>
+                </motion.div>
+              </motion.form>
             </motion.div>
-          </div>
+          </motion.div>
         )}
         {showInvite && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white soft-card p-10 w-full max-w-md">
+          <motion.div {...modalBackdropMotion} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
+            <motion.div {...modalPanelMotion} className="bg-white soft-card p-10 w-full max-w-md">
               <h3 className="font-serif text-3xl mb-2">Convidar para Coletivo</h3>
               <p className="text-muted text-sm mb-8">Informe o ID numerico do usuario para gerar um convite.</p>
-              <form onSubmit={handleCreateInvite} className="space-y-6">
-                <div className="space-y-2">
+              <motion.form variants={staggerContainer} initial="hidden" animate="show" onSubmit={handleCreateInvite} className="space-y-6">
+                <motion.div variants={itemMotion} className="space-y-2">
                   <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">ID do Usuario</label>
                   <input
                     value={inviteReceiverId}
@@ -549,24 +570,24 @@ export const GroupsPage = ({
                     className="elegant-input text-center font-semibold"
                     required
                   />
-                </div>
+                </motion.div>
                 {inviteError && <p className="text-red-500 text-xs font-sans">{inviteError}</p>}
                 {inviteSuccessId && (
                   <p className="text-green-600 text-xs font-sans">
                     Convite criado com sucesso. ID do convite: {inviteSuccessId}
                   </p>
                 )}
-                <div className="flex gap-4 pt-4">
-                  <button type="button" onClick={closeInviteModal} className="flex-1 elegant-btn-outline">
+                <motion.div variants={itemMotion} className="flex gap-4 pt-4">
+                  <motion.button {...subtleButtonMotion} type="button" onClick={closeInviteModal} className="flex-1 elegant-btn-outline">
                     CANCELAR
-                  </button>
-                  <button type="submit" disabled={isSubmittingInvite} className="flex-1 elegant-btn-primary">
+                  </motion.button>
+                  <motion.button {...subtleButtonMotion} type="submit" disabled={isSubmittingInvite} className="flex-1 elegant-btn-primary">
                     {isSubmittingInvite ? 'ENVIANDO...' : 'ENVIAR CONVITE'}
-                  </button>
-                </div>
-              </form>
+                  </motion.button>
+                </motion.div>
+              </motion.form>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

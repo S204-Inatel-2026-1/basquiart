@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { MessageSquare, Send } from 'lucide-react';
 import { Comment, User } from '../types';
 import { api } from '../services/api';
+import { itemMotion, staggerContainer, subtleButtonMotion } from '../lib/motion';
 
 export const CommentsSection = ({
   artworkId,
@@ -92,17 +93,29 @@ export const CommentsSection = ({
   };
 
   return (
-    <div className="mt-8 pt-8 border-t border-ink/5">
+    <motion.div
+      initial={{ opacity: 0, height: 0, y: -8 }}
+      animate={{ opacity: 1, height: 'auto', y: 0 }}
+      exit={{ opacity: 0, height: 0, y: -8 }}
+      transition={{ duration: 0.24 }}
+      className="mt-8 pt-8 border-t border-ink/5 overflow-hidden"
+    >
       <h4 className="font-serif text-lg mb-6 flex items-center gap-2">
         <MessageSquare size={16} className="text-gold" /> Diálogo
       </h4>
 
-      <div className="space-y-6 mb-8 max-h-[350px] overflow-y-auto pr-4 custom-scrollbar scroll-smooth">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="space-y-6 mb-8 max-h-[350px] overflow-y-auto pr-4 custom-scrollbar scroll-smooth"
+      >
+        <AnimatePresence initial={false}>
         {comments.map(comment => (
           <motion.div
             key={comment.id}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
+            variants={itemMotion}
+            exit={{ opacity: 0, x: -8 }}
             className="flex gap-4 p-3 rounded-2xl hover:bg-ink/[0.02] transition-colors"
           >
             <img src={comment.avatar_url} className="w-8 h-8 rounded-full border border-ink/5 flex-shrink-0" alt="" />
@@ -115,15 +128,21 @@ export const CommentsSection = ({
             </div>
           </motion.div>
         ))}
+        </AnimatePresence>
         {comments.length === 0 && !loading && (
           <div className="py-12 text-center">
             <p className="text-xs text-muted italic font-serif">Nenhum diálogo ainda. Seja o primeiro a falar.</p>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {user && (
-        <form onSubmit={handleSubmit} className="relative">
+        <motion.form
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          onSubmit={handleSubmit}
+          className="relative"
+        >
           <input
             type="text"
             value={newComment}
@@ -131,16 +150,17 @@ export const CommentsSection = ({
             placeholder=""
             className="w-full bg-paper/50 border border-ink/10 rounded-full py-3 px-6 pr-12 text-sm font-sans focus:outline-none focus:border-gold/50 transition-colors"
           />
-          <button
+          <motion.button
+            {...subtleButtonMotion}
             type="submit"
             disabled={submitting || !newComment.trim()}
             className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gold hover:text-ink transition-colors disabled:opacity-30"
           >
             <Send size={18} />
-          </button>
+          </motion.button>
           {error && <p className="mt-2 text-red-500 text-xs font-sans">{error}</p>}
-        </form>
+        </motion.form>
       )}
-    </div>
+    </motion.div>
   );
 };
