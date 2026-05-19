@@ -142,6 +142,55 @@ test('lista e cria comentario em post do coletivo', async ({ page }) => {
   await expect(page.getByText('Gostei da paleta.')).toBeVisible();
 });
 
+test('envia avaliacao para post de outro artista', async ({ page }) => {
+  await mockGroupPosts(page, 10, [
+    backendPost({
+      id: 100,
+      authorId: 22,
+      author: {
+        id: 22,
+        username: 'artista-convidado',
+        createdAt: '2026-05-18T12:00:00.000Z',
+      },
+    }),
+  ]);
+
+  let ratingPayload: {
+    ratings: Array<{ category: string; score: number }>;
+  } | null = null;
+
+  await page.route('**/posts/100/rate', async (route) => {
+    ratingPayload = route.request().postDataJSON() as {
+      ratings: Array<{ category: string; score: number }>;
+    };
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    });
+  });
+
+  await openGroupFeed(page);
+  await page.getByRole('button', { name: 'Avaliar' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Avaliar Obra' })).toBeVisible();
+  const sliders = page.locator('input[type="range"]');
+  await sliders.nth(0).fill('8');
+  await sliders.nth(1).fill('6');
+  await sliders.nth(2).fill('10');
+  await page.getByRole('button', { name: /ENVIAR AVALIA/i }).click();
+
+  await expect(page.getByRole('heading', { name: 'Avaliar Obra' })).toBeHidden();
+  expect(ratingPayload).toEqual({
+    ratings: [
+      { category: 'Technique', score: 4 },
+      { category: 'Composition', score: 3 },
+      { category: 'Creativity', score: 5 },
+    ],
+  });
+});
+
 test('publica nova arte dentro de um coletivo', async ({ page }) => {
   const posts = [backendPost({ id: 100, content: 'Primeiro estudo' })];
   await mockGroupPosts(page, 10, posts);
