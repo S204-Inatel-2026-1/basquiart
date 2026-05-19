@@ -35,10 +35,11 @@ export const GroupsPage = ({
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
   const [pendingInvites, setPendingInvites] = useState<GroupInviteSummary[]>([]);
   const [pendingInvitesError, setPendingInvitesError] = useState('');
+  const [pendingInvitesSuccess, setPendingInvitesSuccess] = useState('');
   const [isLoadingInvites, setIsLoadingInvites] = useState(true);
   const [acceptingInviteId, setAcceptingInviteId] = useState<number | null>(null);
 
-  const fetchGroups = () => {
+  const fetchGroups = (options: { clearInviteFeedback?: boolean } = { clearInviteFeedback: true }) => {
     api.groups.listMine()
       .then(data => setGroups(data))
       .catch(err => { console.error(err); setGroups([]); });
@@ -55,6 +56,9 @@ export const GroupsPage = ({
           .catch(fallbackErr => { console.error(fallbackErr); setPublicGroups([]); });
       });
     setPendingInvitesError('');
+    if (options.clearInviteFeedback) {
+      setPendingInvitesSuccess('');
+    }
     setIsLoadingInvites(true);
     api.groups.listInvites()
       .then(data => {
@@ -197,11 +201,13 @@ export const GroupsPage = ({
 
   const handleAcceptPendingInvite = async (inviteId: number) => {
     setPendingInvitesError('');
+    setPendingInvitesSuccess('');
     setAcceptingInviteId(inviteId);
     try {
       await api.groups.acceptInvite(inviteId);
       setPendingInvites((previous) => previous.filter((invite) => invite.id !== inviteId));
-      fetchGroups();
+      setPendingInvitesSuccess('Convite aceito com sucesso.');
+      fetchGroups({ clearInviteFeedback: false });
     } catch (err) {
       console.error(err);
       setPendingInvitesError(
@@ -280,6 +286,13 @@ export const GroupsPage = ({
         <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
           <p className="font-sans text-xs text-red-500">
             Falha no fluxo de convites: {pendingInvitesError}
+          </p>
+        </div>
+      )}
+      {pendingInvitesSuccess && (
+        <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-4 py-3">
+          <p className="font-sans text-xs text-green-700">
+            {pendingInvitesSuccess}
           </p>
         </div>
       )}
