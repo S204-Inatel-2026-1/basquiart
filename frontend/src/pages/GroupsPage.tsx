@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Users, ChevronRight, Search, Image as ImageIcon } from 'lucide-react';
 import { Group, User } from '../types';
-import { api } from '../services/api';
+import { api, type GroupInviteSummary } from '../services/api';
 
 export const GroupsPage = ({
   user,
@@ -27,6 +27,15 @@ export const GroupsPage = ({
   const [isSearching, setIsSearching] = useState(false);
   const [createError, setCreateError] = useState('');
   const [joinError, setJoinError] = useState('');
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteGroupId, setInviteGroupId] = useState<number | null>(null);
+  const [inviteReceiverId, setInviteReceiverId] = useState('');
+  const [inviteError, setInviteError] = useState('');
+  const [inviteSuccessId, setInviteSuccessId] = useState<number | null>(null);
+  const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
+  const [pendingInvites, setPendingInvites] = useState<GroupInviteSummary[]>([]);
+  const [pendingInvitesError, setPendingInvitesError] = useState('');
+  const [acceptingInviteId, setAcceptingInviteId] = useState<number | null>(null);
 
   const fetchGroups = () => {
     api.groups.listMine()
@@ -43,6 +52,23 @@ export const GroupsPage = ({
           })
           .then(data => setPublicGroups(data))
           .catch(fallbackErr => { console.error(fallbackErr); setPublicGroups([]); });
+      });
+    setPendingInvitesError('');
+    api.groups.listInvites()
+      .then(data => {
+        const pending = data
+          .filter((invite) => invite.receiverId === user.id)
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setPendingInvites(pending);
+      })
+      .catch(err => {
+        console.error(err);
+        setPendingInvites([]);
+        setPendingInvitesError(
+          err instanceof Error
+            ? err.message
+            : 'Nao foi possivel carregar convites pendentes.'
+        );
       });
   };
 
@@ -118,22 +144,68 @@ export const GroupsPage = ({
     }
   };
 
-  const handleCreateInvite = async (groupId: number) => {
-    const rawUserId = window.prompt('Informe o ID numerico do usuario para convidar:');
-    if (!rawUserId) return;
+  const openInviteModal = (groupId: number) => {
+    setInviteGroupId(groupId);
+    setInviteReceiverId('');
+    setInviteError('');
+    setInviteSuccessId(null);
+    setShowInvite(true);
+  };
 
-    const receiverId = Number(rawUserId.trim());
-    if (!Number.isInteger(receiverId) || receiverId <= 0) {
-      alert('Informe um ID de usuario valido.');
+  const closeInviteModal = () => {
+    setShowInvite(false);
+    setInviteGroupId(null);
+    setInviteReceiverId('');
+    setInviteError('');
+    setInviteSuccessId(null);
+    setIsSubmittingInvite(false);
+  };
+
+  const handleCreateInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInviteError('');
+    setInviteSuccessId(null);
+
+    if (!inviteGroupId) {
+      setInviteError('Grupo invalido para convite.');
       return;
     }
 
+    const receiverId = Number(inviteReceiverId.trim());
+    if (!Number.isInteger(receiverId) || receiverId <= 0) {
+      setInviteError('Informe um ID de usuario valido.');
+      return;
+    }
+
+    setIsSubmittingInvite(true);
     try {
-      const inviteId = await api.groups.sendInvite(groupId, receiverId);
-      alert(`Convite criado com sucesso. ID do convite: ${inviteId}`);
+      const inviteId = await api.groups.sendInvite(inviteGroupId, receiverId);
+      setInviteSuccessId(inviteId);
+      setInviteReceiverId('');
     } catch (err) {
       console.error(err);
-      alert(err instanceof Error ? err.message : 'Nao foi possivel criar o convite.');
+      setInviteError(err instanceof Error ? err.message : 'Nao foi possivel criar o convite.');
+    } finally {
+      setIsSubmittingInvite(false);
+    }
+  };
+
+  const handleAcceptPendingInvite = async (inviteId: number) => {
+    setPendingInvitesError('');
+    setAcceptingInviteId(inviteId);
+    try {
+      await api.groups.acceptInvite(inviteId);
+      setPendingInvites((previous) => previous.filter((invite) => invite.id !== inviteId));
+      fetchGroups();
+    } catch (err) {
+      console.error(err);
+      setPendingInvitesError(
+        err instanceof Error
+          ? err.message
+          : 'Nao foi possivel aceitar este convite.'
+      );
+    } finally {
+      setAcceptingInviteId(null);
     }
   };
 
@@ -198,6 +270,51 @@ export const GroupsPage = ({
         </div>
       )}
 
+      <h2 className="font-sans text-[10px] tracking-widest font-bold text-muted uppercase mb-6">Convites Pendentes</h2>
+      {pendingInvitesError && (
+        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
+          <p className="font-sans text-xs text-red-500">
+            Falha no fluxo de convites: {pendingInvitesError}
+          </p>
+        </div>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+        {pendingInvites.map((invite) => (
+          <motion.div
+            key={invite.id}
+            initial={{ y: 20, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            viewport={{ once: true }}
+            className="soft-card p-8 flex flex-col gap-6 border border-gold/20 bg-gold/5"
+          >
+            <div className="space-y-3">
+              <h3 className="font-serif text-2xl">Convite #{invite.id}</h3>
+              <p className="font-sans text-xs tracking-wide text-muted">
+                Grupo #{invite.groupId} • Enviado por usuario #{invite.senderId}
+              </p>
+              <p className="font-sans text-[11px] text-muted">
+                Recebido em {new Date(invite.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => void handleAcceptPendingInvite(invite.id)}
+                disabled={acceptingInviteId === invite.id}
+                className="elegant-btn-primary"
+              >
+                {acceptingInviteId === invite.id ? 'ACEITANDO...' : 'ACEITAR'}
+              </button>
+            </div>
+          </motion.div>
+        ))}
+        {pendingInvites.length === 0 && (
+          <div className="col-span-full text-center py-16 rounded-3xl border border-dashed border-ink/10">
+            <p className="font-serif text-xl text-muted italic">Nenhum convite pendente no momento.</p>
+          </div>
+        )}
+      </div>
+
       <h2 className="font-sans text-[10px] tracking-widest font-bold text-muted uppercase mb-6">Seus Coletivos</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
         {groups.map(group => (
@@ -235,7 +352,10 @@ export const GroupsPage = ({
                 </div>
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); void handleCreateInvite(group.id); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openInviteModal(group.id);
+                  }}
                   className="font-sans text-[9px] tracking-widest font-bold uppercase text-muted hover:text-gold transition-colors"
                 >
                   Convidar
@@ -384,6 +504,42 @@ export const GroupsPage = ({
                 <div className="flex gap-4 pt-4">
                   <button type="button" onClick={() => { setShowJoin(false); setJoinError(''); }} className="flex-1 elegant-btn-outline">CANCELAR</button>
                   <button type="submit" className="flex-1 elegant-btn-primary">PARTICIPAR</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+        {showInvite && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white soft-card p-10 w-full max-w-md">
+              <h3 className="font-serif text-3xl mb-2">Convidar para Coletivo</h3>
+              <p className="text-muted text-sm mb-8">Informe o ID numerico do usuario para gerar um convite.</p>
+              <form onSubmit={handleCreateInvite} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">ID do Usuario</label>
+                  <input
+                    value={inviteReceiverId}
+                    onChange={(e) => setInviteReceiverId(e.target.value)}
+                    placeholder=""
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    className="elegant-input text-center font-semibold"
+                    required
+                  />
+                </div>
+                {inviteError && <p className="text-red-500 text-xs font-sans">{inviteError}</p>}
+                {inviteSuccessId && (
+                  <p className="text-green-600 text-xs font-sans">
+                    Convite criado com sucesso. ID do convite: {inviteSuccessId}
+                  </p>
+                )}
+                <div className="flex gap-4 pt-4">
+                  <button type="button" onClick={closeInviteModal} className="flex-1 elegant-btn-outline">
+                    CANCELAR
+                  </button>
+                  <button type="submit" disabled={isSubmittingInvite} className="flex-1 elegant-btn-primary">
+                    {isSubmittingInvite ? 'ENVIANDO...' : 'ENVIAR CONVITE'}
+                  </button>
                 </div>
               </form>
             </motion.div>
