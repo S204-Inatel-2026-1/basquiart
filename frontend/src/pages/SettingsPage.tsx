@@ -24,6 +24,19 @@ export const SettingsPage = ({
     reader.readAsDataURL(file);
   };
 
+  const [copyStatus, setCopyStatus] = React.useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleCopyUserId = async () => {
+    try {
+      await navigator.clipboard.writeText(String(user.id));
+      setCopyStatus('success');
+    } catch {
+      setCopyStatus('error');
+    } finally {
+      window.setTimeout(() => setCopyStatus('idle'), 1800);
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto p-6 sm:p-12">
       <motion.div
@@ -48,6 +61,24 @@ export const SettingsPage = ({
             <div>
               <h2 className="font-serif text-3xl">{user.username}</h2>
               <p className="text-muted font-sans text-sm tracking-wide">Membro desde {new Date().getFullYear()}</p>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="font-sans text-[11px] tracking-widest font-semibold text-muted uppercase">
+                  Meu ID: {user.id}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void handleCopyUserId()}
+                  className="elegant-btn-outline text-[9px] py-1.5 px-3 tracking-widest uppercase font-bold"
+                >
+                  Copiar ID
+                </button>
+                {copyStatus === 'success' && (
+                  <span className="text-[10px] font-sans font-semibold text-green-600">Copiado!</span>
+                )}
+                {copyStatus === 'error' && (
+                  <span className="text-[10px] font-sans font-semibold text-red-500">Falha ao copiar.</span>
+                )}
+              </div>
               <label htmlFor="avatar-upload" className="mt-2 inline-block elegant-btn-outline text-[10px] py-1.5 px-4 tracking-widest uppercase font-bold cursor-pointer">
                 Alterar Foto
               </label>
