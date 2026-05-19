@@ -172,3 +172,81 @@ export async function mockGroups(
     });
   });
 }
+
+type MockPost = {
+  id: number;
+  content: string;
+  createdAt?: string;
+  authorId?: number;
+  groupId?: number;
+  author?: {
+    id: number;
+    username: string;
+    createdAt?: string;
+  };
+  images?: Array<{
+    id: number;
+    url: string;
+  }>;
+  ratings?: Array<{
+    category: 'Technique' | 'Creativity' | 'Composition';
+    average: number;
+    totalVotes: number;
+  }>;
+  likes?: {
+    totalLikes: number;
+    hasLiked: boolean;
+  };
+  commentCount?: number;
+};
+
+export function backendPost(overrides: Partial<MockPost> = {}): MockPost {
+  const authorId = overrides.authorId ?? 22;
+  const groupId = overrides.groupId ?? 10;
+
+  return {
+    id: 100,
+    content: 'Estudo de luz azul',
+    createdAt: '2026-05-19T12:00:00.000Z',
+    authorId,
+    groupId,
+    author: {
+      id: authorId,
+      username: 'artista-convidado',
+      createdAt: '2026-05-18T12:00:00.000Z',
+    },
+    images: [
+      {
+        id: 1,
+        url: 'https://placehold.co/600x800?text=Arte',
+      },
+    ],
+    ratings: [
+      { category: 'Technique', average: 4, totalVotes: 1 },
+      { category: 'Creativity', average: 5, totalVotes: 1 },
+      { category: 'Composition', average: 3, totalVotes: 1 },
+    ],
+    likes: {
+      totalLikes: 2,
+      hasLiked: false,
+    },
+    commentCount: 1,
+    ...overrides,
+  };
+}
+
+export async function mockGroupPosts(page: Page, groupId: number, posts: MockPost[]): Promise<void> {
+  await page.route(`**/posts/${groupId}?**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        page: 1,
+        pageSize: 10,
+        total: posts.length,
+        totalPages: posts.length > 0 ? 1 : 0,
+        posts,
+      }),
+    });
+  });
+}
