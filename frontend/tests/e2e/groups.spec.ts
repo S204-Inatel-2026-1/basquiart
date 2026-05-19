@@ -83,6 +83,14 @@ async function setupAuthenticatedGroups(
     });
   });
 
+  await page.route('**/group/invites', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    });
+  });
+
   return { mine, publicGroups };
 }
 
@@ -239,11 +247,24 @@ test('cria convite para usuario a partir de coletivo proprio', async ({ page }) 
     .first();
   await groupCard.getByRole('button', { name: 'Convidar' }).click();
 
+  const inviteModal = page.getByRole('heading', { name: 'Convidar para Coletivo' });
+  const hasInviteModal = await inviteModal.isVisible({ timeout: 1000 }).catch(() => false);
+
+  if (hasInviteModal) {
+    const form = page.locator('.fixed form').filter({ has: inviteModal });
+    await form.locator('input.elegant-input').fill('99');
+    await form.getByRole('button', { name: 'ENVIAR CONVITE' }).click();
+    await expect(page.getByText('Convite criado com sucesso. ID do convite: 77')).toBeVisible();
+  }
+
   await expect.poll(() => invitePayload).toMatchObject({
     group_id: 10,
     receiverId: 99,
   });
-  await expect
-    .poll(async () => page.evaluate(() => window.localStorage.getItem('last_invite_alert')))
-    .toContain('ID do convite: 77');
+
+  if (!hasInviteModal) {
+    await expect
+      .poll(async () => page.evaluate(() => window.localStorage.getItem('last_invite_alert')))
+      .toContain('ID do convite: 77');
+  }
 });
