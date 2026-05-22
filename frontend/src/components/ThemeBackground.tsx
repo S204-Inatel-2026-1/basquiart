@@ -1,21 +1,21 @@
-import { useEffect, useRef } from 'react';
-import { useTheme } from '../contexts/ThemeContext';
+import { useEffect, useRef } from "react";
+import { useTheme } from "../contexts/ThemeContext";
 
 const themes = {
   dark: {
-    src: '/theme-dark.jpg',
+    src: "/theme-dark.jpg",
     opacity: 0.55,
-    blend: 'luminosity' as const,
+    blend: "luminosity" as const,
   },
   beige: {
-    src: '/theme-beige.jpg',
+    src: "/theme-beige.jpg",
     opacity: 0.22,
-    blend: 'multiply' as const,
+    blend: "multiply" as const,
   },
   white: {
-    src: '/theme-white.jpg',
+    src: "/theme-white.jpg",
     opacity: 0.45,
-    blend: 'multiply' as const,
+    blend: "multiply" as const,
   },
 };
 
@@ -33,8 +33,8 @@ export const ThemeBackground = () => {
       ref.current.style.transform = `translateY(${offset}px)`;
     };
 
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
@@ -42,15 +42,15 @@ export const ThemeBackground = () => {
       <div
         ref={ref}
         style={{
-          position: 'absolute',
-          inset: '-30% 0',
+          position: "absolute",
+          inset: "-30% 0",
           backgroundImage: `url(${cfg.src})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center top',
-          backgroundRepeat: 'no-repeat',
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+          backgroundRepeat: "no-repeat",
           opacity: cfg.opacity,
           mixBlendMode: cfg.blend,
-          willChange: 'transform',
+          willChange: "transform",
         }}
       />
     </div>

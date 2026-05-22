@@ -95,15 +95,7 @@ export const SubmitPage = ({
 
   return (
     <div className="max-w-6xl mx-auto p-6 sm:p-12">
-<<<<<<< Updated upstream
-      <motion.div {...panelMotion} className="bg-white soft-card p-10 sm:p-16">
-=======
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="bg-card soft-card p-10 sm:p-16"
-      >
->>>>>>> Stashed changes
+      <motion.div {...panelMotion} className="bg-card soft-card p-10 sm:p-16">
         <div className="text-center mb-16">
           <h1 className="font-serif text-6xl mb-4">Compartilhe Sua Visão</h1>
           <p className="text-muted font-sans text-sm tracking-wide">Contribua com sua última obra-prima para o coletivo.</p>

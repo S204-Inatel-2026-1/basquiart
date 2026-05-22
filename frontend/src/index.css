@@ -95,6 +95,39 @@
   100% { transform: translateX(-50%); }
 }
 
+/* ===== ACESSIBILIDADE ===== */
+
+/* Tamanho do texto */
+[data-font-size="large"] { font-size: 112.5%; }
+[data-font-size="xl"]    { font-size: 125%; }
+
+/* Alto contraste — temas claros */
+[data-contrast="high"] {
+  --theme-ink: #000000;
+  --theme-muted: #3a3a3a;
+  --theme-gold: #8a6a00;
+  --theme-card-border: rgba(0, 0, 0, 0.2);
+}
+
+/* Alto contraste — tema escuro */
+[data-contrast="high"][data-theme="dark"] {
+  --theme-paper: #000000;
+  --theme-card: #0d0d0d;
+  --theme-ink: #ffffff;
+  --theme-muted: #cccccc;
+  --theme-gold: #f0c060;
+  --theme-card-border: rgba(255, 255, 255, 0.2);
+}
+
+/* Reduzir animações */
+[data-reduce-motion="true"] *,
+[data-reduce-motion="true"] *::before,
+[data-reduce-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
 /* Custom scrollbar for elegance */
 ::-webkit-scrollbar {
   width: 6px;

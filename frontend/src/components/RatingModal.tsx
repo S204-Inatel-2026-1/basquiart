@@ -52,14 +52,8 @@ export const RatingModal = ({
   return (
     <motion.div {...modalBackdropMotion} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
       <motion.div
-<<<<<<< Updated upstream
         {...modalPanelMotion}
-        className="bg-white soft-card p-10 max-w-md w-full"
-=======
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
         className="bg-card soft-card p-10 max-w-md w-full"
->>>>>>> Stashed changes
       >
         <h3 className="font-serif text-3xl mb-2">Avaliar Obra</h3>
         <p className="text-muted text-sm mb-8">Forneça sua avaliação honesta através de três pilares.</p>

@@ -63,15 +63,7 @@ export const LoginPage = ({ onLogin }: { onLogin: (u: User) => void }) => {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4">
-<<<<<<< Updated upstream
-      <motion.div {...panelMotion} className="max-w-md w-full p-10 bg-white soft-card">
-=======
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="max-w-md w-full p-10 bg-card soft-card"
-      >
->>>>>>> Stashed changes
+      <motion.div {...panelMotion} className="max-w-md w-full p-10 bg-card soft-card">
         <h1 className="font-serif text-5xl mb-2 text-center">Bem-vindo</h1>
         <p className="text-muted text-center mb-10 font-sans text-sm tracking-wide">Entre no estúdio para compartilhar sua visão.</p>
         <motion.form

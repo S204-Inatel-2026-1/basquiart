@@ -465,13 +465,8 @@ export const GroupsPage = ({
 
       <AnimatePresence>
         {showCreate && (
-<<<<<<< Updated upstream
           <motion.div {...modalBackdropMotion} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
-            <motion.div {...modalPanelMotion} className="bg-white soft-card p-10 w-full max-w-md">
-=======
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-card soft-card p-10 w-full max-w-md">
->>>>>>> Stashed changes
+            <motion.div {...modalPanelMotion} className="bg-card soft-card p-10 w-full max-w-md">
               <h3 className="font-serif text-3xl mb-2">Novo Coletivo</h3>
               <p className="text-muted text-sm mb-8">Estabeleça um espaço privado para seu círculo interno.</p>
               <motion.form variants={staggerContainer} initial="hidden" animate="show" onSubmit={handleCreate} className="space-y-6">
@@ -532,13 +527,8 @@ export const GroupsPage = ({
           </motion.div>
         )}
         {showJoin && (
-<<<<<<< Updated upstream
           <motion.div {...modalBackdropMotion} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
-            <motion.div {...modalPanelMotion} className="bg-white soft-card p-10 w-full max-w-md">
-=======
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-card soft-card p-10 w-full max-w-md">
->>>>>>> Stashed changes
+            <motion.div {...modalPanelMotion} className="bg-card soft-card p-10 w-full max-w-md">
               <h3 className="font-serif text-3xl mb-2">Participar do Coletivo</h3>
               <p className="text-muted text-sm mb-8">Insira o ID numérico do convite para obter acesso.</p>
               <motion.form variants={staggerContainer} initial="hidden" animate="show" onSubmit={handleJoin} className="space-y-6">
