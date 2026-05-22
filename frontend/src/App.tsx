@@ -4,6 +4,7 @@ import { LayoutGrid, Users, Plus, ArrowLeft } from 'lucide-react';
 import { User, Group } from './types';
 import { authService } from './services/auth';
 import { Navbar } from './components/Navbar';
+import { ThemeBackground } from './components/ThemeBackground';
 import { LoginPage } from './pages/LoginPage';
 import { FeedPage } from './pages/FeedPage';
 import { GroupsPage } from './pages/GroupsPage';
@@ -73,7 +74,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gallery-white selection:bg-neon-green selection:text-brutal-black">
+    <div className="min-h-screen bg-paper selection:bg-gold/30 selection:text-ink">
+      <ThemeBackground />
+      <div className="relative z-10">
       <Navbar
         user={user}
         onLogout={handleLogout}
@@ -171,6 +174,7 @@ export default function App() {
           </div>
         </motion.div>
       )}
+      </div>
     </div>
   );
 }

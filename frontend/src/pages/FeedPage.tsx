@@ -131,7 +131,7 @@ export const FeedPage = ({
             viewport={{ once: true }}
             className="soft-card group flex flex-col"
           >
-            <div className="p-4 flex items-center justify-between bg-white">
+            <div className="p-4 flex items-center justify-between bg-card">
               <button
                 onClick={() => onArtistClick(art.user_id, art.username)}
                 className="flex items-center gap-3 hover:text-gold transition-colors"
@@ -154,7 +154,7 @@ export const FeedPage = ({
               </div>
             </div>
 
-            <div className="p-6 bg-white flex-grow">
+            <div className="p-6 bg-card flex-grow">
               <h3 className="font-serif text-2xl mb-6 tracking-tight">{art.title}</h3>
 
               <div className="grid grid-cols-3 gap-4">

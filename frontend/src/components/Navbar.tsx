@@ -91,8 +91,15 @@ export const Navbar = ({
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
                     <motion.div
+<<<<<<< Updated upstream
                       {...modalPanelMotion}
                       className="absolute right-0 mt-4 w-48 bg-white soft-card shadow-xl border border-ink/5 py-2 z-20"
+=======
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute right-0 mt-4 w-48 bg-card soft-card shadow-xl border border-ink/5 py-2 z-20"
+>>>>>>> Stashed changes
                     >
                       <button
                         onClick={() => { setPage('settings'); setShowDropdown(false); }}
