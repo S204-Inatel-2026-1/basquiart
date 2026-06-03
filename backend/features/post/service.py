@@ -73,10 +73,25 @@ class PostService:
             ],
         }
 
-    async def make_post(self, user_id, group_id, content, images):
+    async def make_post(self, user_id, group_id, content, images, visibility):
         image_urls = []
 
         try:
+            group = await self.db.group.find_unique(
+                where={"id": group_id},
+                include={"members": True}
+            )
+
+            if not group:
+                raise ValueError("Group not found")
+
+            if group.visibility == "PUBLIC":
+                post_visibility = "PUBLIC"
+            else:
+                if visibility not in ["public", "private"]:
+                    raise ValueError("Visibility must be either 'public' or 'private'")
+                post_visibility = visibility.upper()
+
             for image in images:
                 url = await self.image_handler.save(image)
                 image_urls.append(url)
@@ -88,6 +103,7 @@ class PostService:
                     "content": content,
                     "authorId": user_id,
                     "groupId": group_id,
+                    "visibility": post_visibility,
                     "images": {
                         "create": [{"url": url} for url in image_urls]
                     },

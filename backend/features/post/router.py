@@ -7,6 +7,7 @@ from features.post.image_handler import image_handler
 from features.post.service import PostService
 from features.post.schema import RatePostBody, PaginatedPostsResponse, CreateCommentBody, CommentResponse
 from features.core.database import db
+from features.shared.visibility import Visibility
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 service = PostService(db, image_handler)
@@ -30,11 +31,12 @@ async def get_posts(
 async def make_post(
         group_id: int,
         content: str = Form(...),
+        visibility: str = Form(default=Visibility.PRIVATE),
         images: List[UploadFile] = File(default=[]),
         user_id: int = Depends(get_current_user),
 ):
     try:
-        return await service.make_post(user_id, group_id, content, images)
+        return await service.make_post(user_id, group_id, content, images, visibility)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
