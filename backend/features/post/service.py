@@ -46,6 +46,7 @@ class PostService:
             include={
                 "author": True,
                 "images": True,
+                "visibility": True,
                 "ratings": {"include": {"category": True}},
                 "likes": True,
                 "comments": True,
