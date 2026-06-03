@@ -56,6 +56,17 @@ async def accept_invite(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.post("/join/{group_id}")
+async def join_public_group(
+        group_id: int,
+        user_id: int = Depends(get_current_user),
+):
+    try:
+        return await service.join_public_group(user_id, group_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.get("/")
 async def list_my_groups(user_id: int = Depends(get_current_user)):
     try:

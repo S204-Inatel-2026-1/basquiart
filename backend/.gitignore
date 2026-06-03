@@ -20,6 +20,7 @@ node_modules
 [Ss]cripts
 pyvenv.cfg
 .venv
+venv
 pip-selfcheck.json
 
 ### PyCharm ###
