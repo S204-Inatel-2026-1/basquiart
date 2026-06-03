@@ -7,6 +7,7 @@ from features.post.image_handler import image_handler
 from features.post.service import PostService
 from features.post.schema import RatePostBody, PaginatedPostsResponse, CreateCommentBody, CommentResponse
 from features.core.database import db
+from features.shared.visibility import Visibility
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 service = PostService(db, image_handler)
@@ -26,15 +27,29 @@ async def get_posts(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/feed", response_model=PaginatedPostsResponse)
+async def get_feed(
+        user_id: int = Depends(get_current_user),
+        page: int = Query(default=1, ge=1),
+        page_size: int = Query(default=10, ge=1, le=100),
+):
+    try:
+        posts = await service.get_feed(user_id, page, page_size)
+        return posts
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.post("/{group_id}", status_code=status.HTTP_201_CREATED)
 async def make_post(
         group_id: int,
         content: str = Form(...),
+        visibility: str = Form(default=Visibility.PRIVATE),
         images: List[UploadFile] = File(default=[]),
         user_id: int = Depends(get_current_user),
 ):
     try:
-        return await service.make_post(user_id, group_id, content, images)
+        return await service.make_post(user_id, group_id, content, images, visibility)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

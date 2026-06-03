@@ -81,6 +81,35 @@ class GroupService:
 
         return member
 
+    async def join_public_group(self, user_id, group_id):
+        user = await self.db.user.find_unique(where={"id": user_id})
+        if not user:
+            raise ValueError("User not found")
+
+        group = await self.db.group.find_unique(
+            where={"id": group_id},
+            include={"members": True}
+        )
+        if not group:
+            raise ValueError("Group not found")
+
+        if group.visibility != "PUBLIC":
+            raise ValueError("Cannot join this group directly, this is a private group")
+
+        existing_member = await self.db.groupmember.find_unique(
+            where={"userId_groupId": {"userId": user_id, "groupId": group_id}}
+        )
+        if existing_member:
+            raise ValueError("You are already a member of this group")
+
+        member = await self.db.groupmember.create(data={
+            "userId": user_id,
+            "groupId": group_id,
+            "role": "MEMBER",
+        })
+
+        return member
+
     async def list_groups(self, user_id):
         memberships = await self.db.groupmember.find_many(
             where={"userId": user_id},

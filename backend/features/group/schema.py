@@ -1,21 +1,17 @@
 from pydantic import BaseModel, field_validator
-
-
-class GroupVisibility(str):
-    PUBLIC = "public"
-    PRIVATE = "private"
+from features.shared.visibility import Visibility
 
 
 class CreateGroupBody(BaseModel):
     name: str
     description: str | None = None
-    visibility: str = GroupVisibility.PRIVATE
+    visibility: str = Visibility.PRIVATE
 
     @field_validator("visibility")
     @classmethod
     def validate_visibility(cls, value: str) -> str:
         normalized = value.strip().lower()
-        if normalized not in {GroupVisibility.PUBLIC, GroupVisibility.PRIVATE}:
+        if normalized not in {Visibility.PUBLIC, Visibility.PRIVATE}:
             raise ValueError("visibility must be 'public' or 'private'")
         return normalized
 

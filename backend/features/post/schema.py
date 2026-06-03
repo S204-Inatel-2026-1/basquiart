@@ -69,6 +69,7 @@ class PostResponse(BaseModel):
     createdAt: datetime
     authorId: int
     groupId: int
+    visibility: str
     author: AuthorResponse | None = None
     images: list[ImageResponse] | None = None
     ratings: list[CategoryAverageResponse] | None = None

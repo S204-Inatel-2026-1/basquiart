@@ -25,6 +25,9 @@ def mock_db():
         groupmember=SimpleNamespace(
             find_unique=AsyncMock(),
         ),
+        group=SimpleNamespace(
+            find_unique=AsyncMock(),
+        ),
         postlike=SimpleNamespace(
             find_unique=AsyncMock(),
             create=AsyncMock(),
@@ -132,6 +135,7 @@ async def test_make_post_success(post_service, mock_db, mock_image_handler):
         group_id=1,
         content="New post",
         images=["file1.jpg"],
+        visibility="private",
     )
 
     assert result.id == 1
@@ -151,9 +155,10 @@ async def test_make_post_user_not_member(post_service, mock_db, mock_image_handl
             group_id=1,
             content="Post",
             images=["file1.jpg"],
+            visibility="private",
         )
 
-    # Should cleanup saved images
+    # Should clean up saved images
     mock_image_handler.delete.assert_called_once()
 
 
@@ -174,6 +179,7 @@ async def test_make_post_no_images(post_service, mock_db):
         group_id=1,
         content="Text only",
         images=[],
+        visibility="private",
     )
 
     assert result.id == 2
