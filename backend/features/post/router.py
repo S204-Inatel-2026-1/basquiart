@@ -27,6 +27,19 @@ async def get_posts(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/feed", response_model=PaginatedPostsResponse)
+async def get_feed(
+        user_id: int = Depends(get_current_user),
+        page: int = Query(default=1, ge=1),
+        page_size: int = Query(default=10, ge=1, le=100),
+):
+    try:
+        posts = await service.get_feed(user_id, page, page_size)
+        return posts
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.post("/{group_id}", status_code=status.HTTP_201_CREATED)
 async def make_post(
         group_id: int,

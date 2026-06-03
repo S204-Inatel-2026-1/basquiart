@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from prisma import Prisma
 from features.post.image_handler import ImageHandler
 
@@ -71,6 +72,71 @@ class PostService:
                     "commentCount": len(post.comments),
                 }
                 for post in posts
+            ],
+        }
+    
+    async def get_feed(self, user_id, page, page_size, days=7):
+        skip = (page - 1) * page_size
+
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+
+        user_memberships = await self.db.groupmember.find_many(
+            where={"userId": user_id},
+            select={"groupId": True}
+        )
+        user_group_ids = [m.groupId for m in user_memberships]
+
+        # Get posts that are:
+        # 1. PUBLIC from ANY group (public or private groups)
+        # 2. PRIVATE but user is member of that group
+        posts = await self.db.post.find_many(
+            where={
+                "createdAt": {"gte": cutoff_date},
+                "authorId": {"not": user_id},  # Exclude user's own posts
+                "OR": [
+                    {"visibility": "PUBLIC"},  # All public posts
+                    {"groupId": {"in": user_group_ids}}  # Posts from user's groups
+                ]
+            },
+            include={
+                "author": True,
+                "images": True,
+                "group": True,
+                "ratings": {"include": {"category": True}},
+                "likes": True,
+                "comments": True,
+            },
+        )
+
+        for post in posts:
+            post.like_count = len(post.likes)
+
+        # Sort by like_count descending
+        posts.sort(key=lambda x: x.like_count, reverse=True)
+
+        paginated_posts = posts[skip:skip + page_size]
+        total = len(posts)
+
+        return {
+            "page": page,
+            "pageSize": page_size,
+            "total": total,
+            "totalPages": -(-total // page_size) if total > 0 else 0,
+            "timeWindowDays": days,
+            "posts": [
+                {
+                    **post.dict(),
+                    "groupId": post.groupId,
+                    "groupName": post.group.name,
+                    "groupVisibility": post.group.visibility,
+                    "ratings": _aggregate_ratings(post.ratings),
+                    "likes": {
+                        "totalLikes": post.like_count,
+                        "hasLiked": any(like.userId == user_id for like in post.likes),
+                    },
+                    "commentCount": len(post.comments),
+                }
+                for post in paginated_posts
             ],
         }
 
