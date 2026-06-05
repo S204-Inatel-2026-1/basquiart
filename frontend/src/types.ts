@@ -32,6 +32,7 @@ export interface Group {
   creator_id: number;
   invite_code: string;
   visibility: 'public' | 'private';
+  role?: 'OWNER' | 'MEMBER';
   member_count: number;
   cover_url?: string;
   created_at: string;

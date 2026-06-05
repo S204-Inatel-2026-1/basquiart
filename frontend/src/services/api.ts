@@ -123,6 +123,7 @@ function mapGroupSummary(group: BackendGroupSummary): Group {
     creator_id: 0,
     invite_code: '',
     visibility: group.visibility || 'private',
+    role: group.role,
     member_count: group.member_count || 0,
     cover_url: undefined,
     created_at: group.lastPost?.createdAt || new Date().toISOString(),
@@ -414,6 +415,12 @@ export const groupApi = {
       method: 'POST',
     });
   },
+
+  async deleteGroup(groupId: number): Promise<void> {
+    await requestWithAuth<unknown>(`/group/${groupId}`, {
+      method: 'DELETE',
+    });
+  },
 };
 
 export const postApi = {
@@ -426,7 +433,7 @@ export const postApi = {
 
   async createInGroup(
     groupId: number,
-    payload: { title: string; description: string; image: File }
+    payload: { title: string; description: string; image: File; visibility?: 'public' | 'private' }
   ): Promise<void> {
     const formData = new FormData();
     const title = payload.title.trim();
@@ -434,11 +441,18 @@ export const postApi = {
     const content = [title, description].filter(Boolean).join('\n\n') || title;
 
     formData.append('content', content);
+    formData.append('visibility', payload.visibility || 'private');
     formData.append('images', payload.image);
 
     await requestWithAuth<unknown>(`/posts/${groupId}`, {
       method: 'POST',
       body: formData,
+    });
+  },
+
+  async deletePost(postId: number): Promise<void> {
+    await requestWithAuth<unknown>(`/posts/${postId}`, {
+      method: 'DELETE',
     });
   },
 

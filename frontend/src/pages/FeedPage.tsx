@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Trophy, Heart, MessageSquare } from 'lucide-react';
-import { Artwork, User } from '../types';
+import { Plus, Trophy, Heart, MessageSquare, Trash2 } from 'lucide-react';
+import { Artwork, Group, User } from '../types';
 import { api } from '../services/api';
 import { RatingModal } from '../components/RatingModal';
+import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { CommentsSection } from '../components/CommentsSection';
 import { cardMotion, interactiveCardMotion, staggerContainer, subtleButtonMotion } from '../lib/motion';
 
@@ -11,6 +12,7 @@ export const FeedPage = ({
   user,
   groupId,
   groupName,
+  groupRole,
   userId,
   userName,
   onNavigateToSubmit,
@@ -19,6 +21,7 @@ export const FeedPage = ({
   user: User | null;
   groupId?: number;
   groupName?: string;
+  groupRole?: Group['role'];
   userId?: number;
   userName?: string;
   onNavigateToSubmit: () => void;
@@ -29,7 +32,46 @@ export const FeedPage = ({
   const [ratingTarget, setRatingTarget] = useState<Artwork | null>(null);
   const [openComments, setOpenComments] = useState<number | null>(null);
   const [likingPostIds, setLikingPostIds] = useState<number[]>([]);
+  const [deletingPostIds, setDeletingPostIds] = useState<number[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Artwork | null>(null);
+  const [deleteError, setDeleteError] = useState('');
   const isBackendGroupFeed = Boolean(groupId);
+  const canDeletePost = (artwork: Artwork) =>
+    Boolean(isBackendGroupFeed && user && (user.id === artwork.user_id || groupRole === 'OWNER'));
+
+  const requestDeletePost = (artwork: Artwork) => {
+    if (!canDeletePost(artwork)) return;
+    setDeleteTarget(artwork);
+    setDeleteError('');
+  };
+
+  const closeDeleteModal = () => {
+    if (deleteTarget && deletingPostIds.includes(deleteTarget.id)) return;
+    setDeleteTarget(null);
+    setDeleteError('');
+  };
+
+  const handleDeletePost = async () => {
+    if (!deleteTarget || !canDeletePost(deleteTarget)) return;
+    if (deletingPostIds.includes(deleteTarget.id)) return;
+
+    const postId = deleteTarget.id;
+    setDeleteError('');
+    setDeletingPostIds(prev => [...prev, postId]);
+    try {
+      await api.posts.deletePost(postId);
+      setArtworks(prev => prev.filter(item => item.id !== postId));
+      if (openComments === postId) {
+        setOpenComments(null);
+      }
+      setDeleteTarget(null);
+    } catch (err) {
+      console.error(err);
+      setDeleteError(err instanceof Error ? err.message : 'Nao foi possivel excluir esta publicacao.');
+    } finally {
+      setDeletingPostIds(prev => prev.filter(id => id !== postId));
+    }
+  };
 
   const handleToggleLike = async (artwork: Artwork) => {
     if (!isBackendGroupFeed || !user) return;
@@ -210,15 +252,28 @@ export const FeedPage = ({
                 )}
               </div>
 
-              {user && user.id !== art.user_id && (
-                <motion.button
-                  {...subtleButtonMotion}
-                  onClick={() => setRatingTarget(art)}
-                  className="elegant-btn-outline text-[10px] py-1.5 px-4 tracking-widest uppercase font-bold"
-                >
-                  Avaliar
-                </motion.button>
-              )}
+              <div className="flex items-center gap-3">
+                {canDeletePost(art) && (
+                  <motion.button
+                    {...subtleButtonMotion}
+                    onClick={() => requestDeletePost(art)}
+                    disabled={deletingPostIds.includes(art.id)}
+                    className="flex items-center gap-1.5 font-sans text-[9px] tracking-widest uppercase text-red-500 hover:text-ink transition-colors disabled:opacity-40"
+                  >
+                    <Trash2 size={12} /> {deletingPostIds.includes(art.id) ? 'Excluindo...' : 'Excluir'}
+                  </motion.button>
+                )}
+
+                {user && user.id !== art.user_id && (
+                  <motion.button
+                    {...subtleButtonMotion}
+                    onClick={() => setRatingTarget(art)}
+                    className="elegant-btn-outline text-[10px] py-1.5 px-4 tracking-widest uppercase font-bold"
+                  >
+                    Avaliar
+                  </motion.button>
+                )}
+              </div>
             </div>
           </motion.div>
         ))}
@@ -242,6 +297,20 @@ export const FeedPage = ({
             onClose={() => setRatingTarget(null)}
             onRated={fetchArt}
             useBackendRating={isBackendGroupFeed}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {deleteTarget && (
+          <DeleteConfirmModal
+            title="Excluir Publicacao"
+            description="Esta acao remove a publicacao do coletivo e nao pode ser desfeita."
+            itemName={deleteTarget.title}
+            loading={deletingPostIds.includes(deleteTarget.id)}
+            error={deleteError}
+            onCancel={closeDeleteModal}
+            onConfirm={() => void handleDeletePost()}
           />
         )}
       </AnimatePresence>

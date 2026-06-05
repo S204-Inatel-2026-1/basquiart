@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, ChevronRight, Search, Image as ImageIcon } from 'lucide-react';
+import { Users, ChevronRight, Search, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { Group, User } from '../types';
 import { api, type GroupInviteSummary } from '../services/api';
+import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import {
   cardMotion,
   interactiveCardMotion,
@@ -47,6 +48,9 @@ export const GroupsPage = ({
   const [pendingInvitesSuccess, setPendingInvitesSuccess] = useState('');
   const [isLoadingInvites, setIsLoadingInvites] = useState(true);
   const [acceptingInviteId, setAcceptingInviteId] = useState<number | null>(null);
+  const [deletingGroupId, setDeletingGroupId] = useState<number | null>(null);
+  const [deleteTargetGroup, setDeleteTargetGroup] = useState<Group | null>(null);
+  const [deleteGroupError, setDeleteGroupError] = useState('');
 
   const fetchGroups = (options: { clearInviteFeedback?: boolean } = { clearInviteFeedback: true }) => {
     api.groups.listMine()
@@ -229,6 +233,43 @@ export const GroupsPage = ({
     }
   };
 
+  const requestDeleteGroup = (group: Group) => {
+    if (group.role !== 'OWNER') return;
+    setDeleteTargetGroup(group);
+    setDeleteGroupError('');
+  };
+
+  const closeDeleteGroupModal = () => {
+    if (deleteTargetGroup && deletingGroupId === deleteTargetGroup.id) return;
+    setDeleteTargetGroup(null);
+    setDeleteGroupError('');
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!deleteTargetGroup || deleteTargetGroup.role !== 'OWNER') return;
+    if (deletingGroupId) return;
+
+    const groupId = deleteTargetGroup.id;
+    setDeleteGroupError('');
+    setDeletingGroupId(groupId);
+    try {
+      await api.groups.deleteGroup(groupId);
+      setGroups((previous) => previous.filter((item) => item.id !== groupId));
+      setPublicGroups((previous) => previous.filter((item) => item.id !== groupId));
+      setSearchResults((previous) => previous.filter((item) => item.id !== groupId));
+      setDeleteTargetGroup(null);
+    } catch (err) {
+      console.error(err);
+      setDeleteGroupError(
+        err instanceof Error
+          ? err.message
+          : 'Nao foi possivel excluir este coletivo.'
+      );
+    } finally {
+      setDeletingGroupId(null);
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto p-6 sm:p-12">
       <motion.div
@@ -382,7 +423,7 @@ export const GroupsPage = ({
                 </div>
                 <p className="font-sans text-sm text-muted leading-relaxed mb-8">{group.description}</p>
               </div>
-              <div className="flex justify-between items-center pt-6 border-t border-ink/5">
+              <div className="flex flex-wrap justify-between items-center gap-4 pt-6 border-t border-ink/5">
                 <div className="flex items-center gap-2 font-sans text-[10px] tracking-widest font-bold uppercase text-muted">
                   <Users size={14} /> {group.member_count} Membros
                 </div>
@@ -393,17 +434,34 @@ export const GroupsPage = ({
                       ? 'Coletivo Privado'
                       : 'Coletivo Público'}
                 </div>
-                <motion.button
-                  {...subtleButtonMotion}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openInviteModal(group.id);
-                  }}
-                  className="font-sans text-[9px] tracking-widest font-bold uppercase text-muted hover:text-gold transition-colors"
-                >
-                  Convidar
-                </motion.button>
+                <div className="flex items-center gap-4">
+                  <motion.button
+                    {...subtleButtonMotion}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openInviteModal(group.id);
+                    }}
+                    className="font-sans text-[9px] tracking-widest font-bold uppercase text-muted hover:text-gold transition-colors"
+                  >
+                    Convidar
+                  </motion.button>
+
+                  {group.role === 'OWNER' && (
+                    <motion.button
+                      {...subtleButtonMotion}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        requestDeleteGroup(group);
+                      }}
+                      disabled={deletingGroupId === group.id}
+                      className="flex items-center gap-1.5 font-sans text-[9px] tracking-widest font-bold uppercase text-red-500 hover:text-ink transition-colors disabled:opacity-40"
+                    >
+                      <Trash2 size={12} /> {deletingGroupId === group.id ? 'Excluindo...' : 'Excluir'}
+                    </motion.button>
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>
@@ -588,6 +646,20 @@ export const GroupsPage = ({
               </motion.form>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {deleteTargetGroup && (
+          <DeleteConfirmModal
+            title="Excluir Coletivo"
+            description="Esta acao remove o coletivo, seus convites e suas publicacoes. Depois da confirmacao, a remocao nao pode ser desfeita."
+            itemName={deleteTargetGroup.name}
+            loading={deletingGroupId === deleteTargetGroup.id}
+            error={deleteGroupError}
+            onCancel={closeDeleteGroupModal}
+            onConfirm={() => void handleDeleteGroup()}
+          />
         )}
       </AnimatePresence>
     </div>

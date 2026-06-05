@@ -53,37 +53,17 @@ export const SubmitPage = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title) return;
-    if (visibility === 'private' && (!selectedGroupId || !imageFile)) return;
-    if (visibility === 'public' && !image) return;
+    if (!selectedGroupId || !imageFile) return;
 
     setSubmitting(true);
     setSubmitError('');
     try {
-      if (visibility === 'private' && selectedGroupId && imageFile) {
-        await api.posts.createInGroup(selectedGroupId, { title, description, image: imageFile });
-        onComplete();
-        return;
-      }
-
-      const res = await fetch('/api/artworks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: user.id,
-          username: user.username,
-          avatar_url: user.avatar_url,
-          group_ids: [],
-          title,
-          description,
-          image_url: image,
-        }),
+      await api.posts.createInGroup(selectedGroupId, {
+        title,
+        description,
+        image: imageFile,
+        visibility,
       });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error || 'Falha ao publicar.');
-      }
-
       onComplete();
     } catch (err) {
       console.error(err);
@@ -148,21 +128,19 @@ export const SubmitPage = ({
                 </button>
               </div>
 
-              {visibility === 'private' && (
-                <div className="space-y-2">
-                  <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">Selecionar Coletivo</label>
-                  <select
-                    value={selectedGroupId || ''}
-                    onChange={(e) => setSelectedGroupId(Number(e.target.value))}
-                    className="elegant-input"
-                  >
-                    {userGroups.map(g => (
-                      <option key={g.id} value={g.id}>{g.name}</option>
-                    ))}
-                    {userGroups.length === 0 && <option disabled>Nenhum grupo participado</option>}
-                  </select>
-                </div>
-              )}
+              <div className="space-y-2">
+                <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">Selecionar Coletivo</label>
+                <select
+                  value={selectedGroupId || ''}
+                  onChange={(e) => setSelectedGroupId(Number(e.target.value))}
+                  className="elegant-input"
+                >
+                  {userGroups.map(g => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                  {userGroups.length === 0 && <option value="" disabled>Nenhum grupo participado</option>}
+                </select>
+              </div>
             </motion.div>
           </motion.div>
 
@@ -200,9 +178,8 @@ export const SubmitPage = ({
                 disabled={
                   submitting ||
                   !title ||
-                  (visibility === 'private'
-                    ? !selectedGroupId || !imageFile
-                    : !image)
+                  !selectedGroupId ||
+                  !imageFile
                 }
                 className="w-full elegant-btn-primary py-5 text-lg"
               >
