@@ -47,7 +47,6 @@ class PostService:
             include={
                 "author": True,
                 "images": True,
-                "visibility": True,
                 "ratings": {"include": {"category": True}},
                 "likes": True,
                 "comments": True,
@@ -81,8 +80,7 @@ class PostService:
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
 
         user_memberships = await self.db.groupmember.find_many(
-            where={"userId": user_id},
-            select={"groupId": True}
+            where={"userId": user_id}
         )
         user_group_ids = [m.groupId for m in user_memberships]
 
@@ -108,14 +106,18 @@ class PostService:
             },
         )
 
-        for post in posts:
-            post.like_count = len(post.likes)
-
+        # Create list of tuples (post, like_count) without modifying the post object
+        posts_with_counts = [(post, len(post.likes)) for post in posts]
+        
         # Sort by like_count descending
-        posts.sort(key=lambda x: x.like_count, reverse=True)
-
-        paginated_posts = posts[skip:skip + page_size]
-        total = len(posts)
+        posts_with_counts.sort(key=lambda x: x[1], reverse=True)
+        
+        # Extract sorted posts
+        sorted_posts = [post for post, _ in posts_with_counts]
+        
+        # Apply pagination
+        paginated_posts = sorted_posts[skip:skip + page_size]
+        total = len(sorted_posts)
 
         return {
             "page": page,
@@ -131,7 +133,7 @@ class PostService:
                     "groupVisibility": post.group.visibility,
                     "ratings": _aggregate_ratings(post.ratings),
                     "likes": {
-                        "totalLikes": post.like_count,
+                        "totalLikes": len(post.likes),
                         "hasLiked": any(like.userId == user_id for like in post.likes),
                     },
                     "commentCount": len(post.comments),
