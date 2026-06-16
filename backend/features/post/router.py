@@ -13,6 +13,19 @@ router = APIRouter(prefix="/posts", tags=["posts"])
 service = PostService(db, image_handler)
 
 
+@router.get("/feed", response_model=PaginatedPostsResponse)
+async def get_feed(
+        user_id: int = Depends(get_current_user),
+        page: int = Query(default=1, ge=1),
+        page_size: int = Query(default=10, ge=1, le=100),
+):
+    try:
+        posts = await service.get_feed(user_id, page, page_size)
+        return posts
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.get("/{group_id}", response_model=PaginatedPostsResponse)
 async def get_posts(
         group_id: int,
@@ -22,19 +35,6 @@ async def get_posts(
 ):
     try:
         posts = await service.get_posts(user_id, group_id, page, page_size)
-        return posts
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.get("/feed", response_model=PaginatedPostsResponse)
-async def get_feed(
-        user_id: int = Depends(get_current_user),
-        page: int = Query(default=1, ge=1),
-        page_size: int = Query(default=10, ge=1, le=100),
-):
-    try:
-        posts = await service.get_feed(user_id, page, page_size)
         return posts
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

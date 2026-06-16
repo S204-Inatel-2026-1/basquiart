@@ -128,6 +128,7 @@ export default function App() {
                 user={user}
                 groupId={selectedGroup.id}
                 groupName={selectedGroup.name}
+                groupRole={selectedGroup.role}
                 onNavigateToSubmit={() => setPage('submit')}
                 onArtistClick={navigateToArtist}
               />
