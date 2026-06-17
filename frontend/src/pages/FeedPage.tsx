@@ -36,8 +36,9 @@ export const FeedPage = ({
   const [deleteTarget, setDeleteTarget] = useState<Artwork | null>(null);
   const [deleteError, setDeleteError] = useState('');
   const isBackendGroupFeed = Boolean(groupId);
+  const usesBackendPosts = Boolean(user && !userId);
   const canDeletePost = (artwork: Artwork) =>
-    Boolean(isBackendGroupFeed && user && (user.id === artwork.user_id || groupRole === 'OWNER'));
+    Boolean(usesBackendPosts && user && (user.id === artwork.user_id || groupRole === 'OWNER'));
 
   const requestDeletePost = (artwork: Artwork) => {
     if (!canDeletePost(artwork)) return;
@@ -74,7 +75,7 @@ export const FeedPage = ({
   };
 
   const handleToggleLike = async (artwork: Artwork) => {
-    if (!isBackendGroupFeed || !user) return;
+    if (!usesBackendPosts || !user) return;
     if (likingPostIds.includes(artwork.id)) return;
 
     setLikingPostIds(prev => [...prev, artwork.id]);
@@ -104,6 +105,14 @@ export const FeedPage = ({
 
     if (groupId && user) {
       api.posts.listByGroup(groupId)
+        .then(data => setArtworks(data))
+        .catch(err => { console.error(err); setArtworks([]); })
+        .finally(() => setLoading(false));
+      return;
+    }
+
+    if (!groupId && !userId && user) {
+      api.posts.listFeed()
         .then(data => setArtworks(data))
         .catch(err => { console.error(err); setArtworks([]); })
         .finally(() => setLoading(false));
@@ -220,7 +229,7 @@ export const FeedPage = ({
                     artworkId={art.id}
                     user={user}
                     onCommentAdded={fetchArt}
-                    useBackendComments={isBackendGroupFeed}
+                    useBackendComments={usesBackendPosts}
                   />
                 )}
               </AnimatePresence>
@@ -240,7 +249,7 @@ export const FeedPage = ({
                 >
                   <MessageSquare size={12} /> Diálogo ({art.comment_count || 0})
                 </motion.button>
-                {isBackendGroupFeed && (
+                {usesBackendPosts && (
                   <motion.button
                     {...subtleButtonMotion}
                     onClick={() => void handleToggleLike(art)}
@@ -296,7 +305,7 @@ export const FeedPage = ({
             user={user}
             onClose={() => setRatingTarget(null)}
             onRated={fetchArt}
-            useBackendRating={isBackendGroupFeed}
+            useBackendRating={usesBackendPosts}
           />
         )}
       </AnimatePresence>

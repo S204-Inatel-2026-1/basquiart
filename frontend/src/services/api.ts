@@ -416,6 +416,12 @@ export const groupApi = {
     });
   },
 
+  async joinPublic(groupId: number): Promise<void> {
+    await requestWithAuth<unknown>(`/group/join/${groupId}`, {
+      method: 'POST',
+    });
+  },
+
   async deleteGroup(groupId: number): Promise<void> {
     await requestWithAuth<unknown>(`/group/${groupId}`, {
       method: 'DELETE',
@@ -424,6 +430,13 @@ export const groupApi = {
 };
 
 export const postApi = {
+  async listFeed(page = 1, pageSize = 10): Promise<Artwork[]> {
+    const response = await requestWithAuth<BackendPaginatedPosts>(
+      `/posts/feed?page=${page}&page_size=${pageSize}`
+    );
+    return response.posts.map(mapPostToArtwork);
+  },
+
   async listByGroup(groupId: number, page = 1, pageSize = 10): Promise<Artwork[]> {
     const response = await requestWithAuth<BackendPaginatedPosts>(
       `/posts/${groupId}?page=${page}&page_size=${pageSize}`

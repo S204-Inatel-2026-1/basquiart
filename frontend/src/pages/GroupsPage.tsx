@@ -48,6 +48,8 @@ export const GroupsPage = ({
   const [pendingInvitesSuccess, setPendingInvitesSuccess] = useState('');
   const [isLoadingInvites, setIsLoadingInvites] = useState(true);
   const [acceptingInviteId, setAcceptingInviteId] = useState<number | null>(null);
+  const [joiningPublicGroupId, setJoiningPublicGroupId] = useState<number | null>(null);
+  const [publicJoinError, setPublicJoinError] = useState('');
   const [deletingGroupId, setDeletingGroupId] = useState<number | null>(null);
   const [deleteTargetGroup, setDeleteTargetGroup] = useState<Group | null>(null);
   const [deleteGroupError, setDeleteGroupError] = useState('');
@@ -233,6 +235,51 @@ export const GroupsPage = ({
     }
   };
 
+  const handleOpenGroup = async (group: Group) => {
+    const memberGroup = groups.find((item) => item.id === group.id);
+    if (memberGroup) {
+      onSelectGroup(memberGroup);
+      return;
+    }
+
+    if (group.visibility !== 'public') {
+      onSelectGroup(group);
+      return;
+    }
+
+    if (joiningPublicGroupId === group.id) return;
+
+    setPublicJoinError('');
+    setJoiningPublicGroupId(group.id);
+    try {
+      await api.groups.joinPublic(group.id);
+      const joinedGroup: Group = {
+        ...group,
+        role: 'MEMBER',
+        member_count: (group.member_count || 0) + 1,
+      };
+      setGroups((previous) =>
+        previous.some((item) => item.id === joinedGroup.id)
+          ? previous
+          : [...previous, joinedGroup]
+      );
+      setPublicGroups((previous) => previous.filter((item) => item.id !== group.id));
+      setSearchResults((previous) =>
+        previous.map((item) => (item.id === group.id ? joinedGroup : item))
+      );
+      onSelectGroup(joinedGroup);
+    } catch (err) {
+      console.error(err);
+      setPublicJoinError(
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível entrar neste coletivo público.'
+      );
+    } finally {
+      setJoiningPublicGroupId(null);
+    }
+  };
+
   const requestDeleteGroup = (group: Group) => {
     if (group.role !== 'OWNER') return;
     setDeleteTargetGroup(group);
@@ -320,7 +367,7 @@ export const GroupsPage = ({
                 variants={cardMotion}
                 {...interactiveCardMotion}
                 className="soft-card p-8 flex flex-col justify-between hover:border-gold/30 cursor-pointer group bg-gold/5"
-                onClick={() => onSelectGroup(group)}
+                onClick={() => void handleOpenGroup(group)}
               >
                 <div>
                   <div className="flex justify-between items-start mb-4">
@@ -333,7 +380,9 @@ export const GroupsPage = ({
                   <div className="flex items-center gap-2 font-sans text-[10px] tracking-widest font-bold uppercase text-muted">
                     <Users size={14} /> {group.member_count} Membros
                   </div>
-                  <div className="font-sans text-[10px] tracking-widest font-bold uppercase text-gold/60">Coletivo Público</div>
+                  <div className="font-sans text-[10px] tracking-widest font-bold uppercase text-gold/60">
+                    {joiningPublicGroupId === group.id ? 'Entrando...' : 'Coletivo Público'}
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -408,7 +457,7 @@ export const GroupsPage = ({
             {...interactiveCardMotion}
             viewport={{ once: true }}
             className="soft-card overflow-hidden flex flex-col hover:border-gold/30 cursor-pointer group"
-            onClick={() => onSelectGroup(group)}
+            onClick={() => void handleOpenGroup(group)}
           >
             {group.cover_url && (
               <div className="h-32 w-full overflow-hidden">
@@ -474,6 +523,13 @@ export const GroupsPage = ({
       </motion.div>
 
       <h2 className="font-sans text-[10px] tracking-widest font-bold text-muted uppercase mb-6">Coletivos Públicos</h2>
+      {publicJoinError && (
+        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
+          <p className="font-sans text-xs text-red-500">
+            Falha ao entrar no coletivo público: {publicJoinError}
+          </p>
+        </div>
+      )}
       <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {publicGroups.map(group => {
           const isMember = groups.some(g => g.id === group.id);
@@ -484,7 +540,7 @@ export const GroupsPage = ({
               {...interactiveCardMotion}
               viewport={{ once: true }}
               className="soft-card overflow-hidden flex flex-col hover:border-gold/30 cursor-pointer group"
-              onClick={() => onSelectGroup(group)}
+              onClick={() => void handleOpenGroup(group)}
             >
               {group.cover_url && (
                 <div className="h-32 w-full overflow-hidden">
@@ -508,7 +564,9 @@ export const GroupsPage = ({
                   <div className="flex items-center gap-2 font-sans text-[10px] tracking-widest font-bold uppercase text-muted">
                     <Users size={14} /> {group.member_count} Membros
                   </div>
-                  <div className="font-sans text-[10px] tracking-widest font-bold uppercase text-gold/60">Coletivo Público</div>
+                  <div className="font-sans text-[10px] tracking-widest font-bold uppercase text-gold/60">
+                    {joiningPublicGroupId === group.id ? 'Entrando...' : 'Coletivo Público'}
+                  </div>
                 </div>
               </div>
             </motion.div>
