@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Users, ChevronRight, Search, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { Users, ChevronRight, Search, Image as ImageIcon, LogOut, Trash2 } from 'lucide-react';
 import { Group, User } from '../types';
 import { api, type GroupInviteSummary } from '../services/api';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
@@ -53,6 +53,9 @@ export const GroupsPage = ({
   const [deletingGroupId, setDeletingGroupId] = useState<number | null>(null);
   const [deleteTargetGroup, setDeleteTargetGroup] = useState<Group | null>(null);
   const [deleteGroupError, setDeleteGroupError] = useState('');
+  const [leavingGroupId, setLeavingGroupId] = useState<number | null>(null);
+  const [leaveTargetGroup, setLeaveTargetGroup] = useState<Group | null>(null);
+  const [leaveGroupError, setLeaveGroupError] = useState('');
 
   const fetchGroups = (options: { clearInviteFeedback?: boolean } = { clearInviteFeedback: true }) => {
     api.groups.listMine()
@@ -286,10 +289,22 @@ export const GroupsPage = ({
     setDeleteGroupError('');
   };
 
+  const requestLeaveGroup = (group: Group) => {
+    if (group.role !== 'MEMBER') return;
+    setLeaveTargetGroup(group);
+    setLeaveGroupError('');
+  };
+
   const closeDeleteGroupModal = () => {
     if (deleteTargetGroup && deletingGroupId === deleteTargetGroup.id) return;
     setDeleteTargetGroup(null);
     setDeleteGroupError('');
+  };
+
+  const closeLeaveGroupModal = () => {
+    if (leaveTargetGroup && leavingGroupId === leaveTargetGroup.id) return;
+    setLeaveTargetGroup(null);
+    setLeaveGroupError('');
   };
 
   const handleDeleteGroup = async () => {
@@ -314,6 +329,47 @@ export const GroupsPage = ({
       );
     } finally {
       setDeletingGroupId(null);
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    if (!leaveTargetGroup || leaveTargetGroup.role !== 'MEMBER') return;
+    if (leavingGroupId) return;
+
+    const groupId = leaveTargetGroup.id;
+    const publicGroupAfterLeave: Group = {
+      ...leaveTargetGroup,
+      role: undefined,
+      member_count: Math.max(0, leaveTargetGroup.member_count - 1),
+    };
+
+    setLeaveGroupError('');
+    setLeavingGroupId(groupId);
+    try {
+      await api.groups.removeMember(groupId, user.id);
+      setGroups((previous) => previous.filter((item) => item.id !== groupId));
+      if (leaveTargetGroup.visibility === 'public') {
+        setPublicGroups((previous) =>
+          previous.some((item) => item.id === groupId)
+            ? previous.map((item) => (item.id === groupId ? publicGroupAfterLeave : item))
+            : [...previous, publicGroupAfterLeave]
+        );
+        setSearchResults((previous) =>
+          previous.map((item) => (item.id === groupId ? publicGroupAfterLeave : item))
+        );
+      } else {
+        setSearchResults((previous) => previous.filter((item) => item.id !== groupId));
+      }
+      setLeaveTargetGroup(null);
+    } catch (err) {
+      console.error(err);
+      setLeaveGroupError(
+        err instanceof Error
+          ? err.message
+          : 'Nao foi possivel sair deste coletivo.'
+      );
+    } finally {
+      setLeavingGroupId(null);
     }
   };
 
@@ -508,6 +564,20 @@ export const GroupsPage = ({
                       className="flex items-center gap-1.5 font-sans text-[9px] tracking-widest font-bold uppercase text-red-500 hover:text-ink transition-colors disabled:opacity-40"
                     >
                       <Trash2 size={12} /> {deletingGroupId === group.id ? 'Excluindo...' : 'Excluir'}
+                    </motion.button>
+                  )}
+                  {group.role === 'MEMBER' && (
+                    <motion.button
+                      {...subtleButtonMotion}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        requestLeaveGroup(group);
+                      }}
+                      disabled={leavingGroupId === group.id}
+                      className="flex items-center gap-1.5 font-sans text-[9px] tracking-widest font-bold uppercase text-red-500 hover:text-ink transition-colors disabled:opacity-40"
+                    >
+                      <LogOut size={12} /> {leavingGroupId === group.id ? 'Saindo...' : 'Sair'}
                     </motion.button>
                   )}
                 </div>
@@ -717,6 +787,18 @@ export const GroupsPage = ({
             error={deleteGroupError}
             onCancel={closeDeleteGroupModal}
             onConfirm={() => void handleDeleteGroup()}
+          />
+        )}
+        {leaveTargetGroup && (
+          <DeleteConfirmModal
+            title="Sair do Coletivo"
+            description="Esta acao remove sua participacao no coletivo. Para voltar a um coletivo privado, sera necessario receber um novo convite."
+            itemName={leaveTargetGroup.name}
+            confirmLabel="SAIR"
+            loading={leavingGroupId === leaveTargetGroup.id}
+            error={leaveGroupError}
+            onCancel={closeLeaveGroupModal}
+            onConfirm={() => void handleLeaveGroup()}
           />
         )}
       </AnimatePresence>
