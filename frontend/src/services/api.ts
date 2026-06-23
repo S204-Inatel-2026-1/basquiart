@@ -422,6 +422,12 @@ export const groupApi = {
     });
   },
 
+  async removeMember(groupId: number, memberId: number): Promise<void> {
+    await requestWithAuth<unknown>(`/group/${groupId}/members/${memberId}`, {
+      method: 'DELETE',
+    });
+  },
+
   async deleteGroup(groupId: number): Promise<void> {
     await requestWithAuth<unknown>(`/group/${groupId}`, {
       method: 'DELETE',
