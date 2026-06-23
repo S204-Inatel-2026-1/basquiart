@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Trophy, Heart, MessageSquare, Trash2 } from 'lucide-react';
+import { Plus, Trophy, Heart, MessageSquare, Trash2, Gavel } from 'lucide-react';
 import { Artwork, Group, User } from '../types';
 import { api } from '../services/api';
 import { RatingModal } from '../components/RatingModal';
@@ -261,7 +261,7 @@ export const FeedPage = ({
                     <Heart size={12} fill={art.has_liked ? 'currentColor' : 'none'} /> Curtidas ({art.like_count || 0})
                   </motion.button>
                 )}
-                {isBackendGroupFeed && user && (
+                {user && (
                   <motion.button
                     {...subtleButtonMotion}
                     onClick={() => setBidTarget(art)}

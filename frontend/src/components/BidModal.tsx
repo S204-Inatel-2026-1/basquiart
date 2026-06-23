@@ -56,8 +56,8 @@ export const BidModal = ({
     try {
       await api.bids.create(artwork.id, value);
       setAmount('');
-      fetchBids();
       onChanged();
+      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao enviar o lance.');
     } finally {
@@ -130,8 +130,10 @@ export const BidModal = ({
           {bids.map((bid) => (
             <motion.div key={bid.id} variants={itemMotion} className="p-4 bg-paper/30 rounded-2xl border border-ink/5 flex items-center justify-between gap-3">
               <div>
-                {isAuthor && (
-                  <p className="font-sans text-xs font-semibold">{bid.bidder_username}</p>
+                {(isAuthor || bid.bidder_id === user.id) && (
+                  <p className="font-sans text-xs font-semibold">
+                    {bid.bidder_id === user.id ? 'Você' : bid.bidder_username}
+                  </p>
                 )}
                 <p className="font-serif text-lg text-gold">R$ {bid.amount.toFixed(2)}</p>
                 <p className="font-sans text-[10px] uppercase tracking-widest text-muted">{statusLabel[bid.status]}</p>

@@ -10,13 +10,13 @@ class UserCreate(BaseModel):
     @classmethod
     def validate_password(cls, v: str) -> str:
         if len(v) < 8:
-            raise ValueError("Password must be at least 8 characters")
+            raise ValueError("A senha deve ter no mínimo 8 caracteres")
         if not re.search(r"[A-Z]", v):
-            raise ValueError("Password must contain at least one uppercase letter")
+            raise ValueError("A senha deve conter ao menos uma letra maiúscula")
         if not re.search(r"[0-9]", v):
-            raise ValueError("Password must contain at least one number")
+            raise ValueError("A senha deve conter ao menos um número")
         if not re.search(r"[!@#$%^&*]", v):
-            raise ValueError("Password must contain at least one special character (!@#$%^&*)")
+            raise ValueError("A senha deve conter ao menos um caractere especial (!@#$%^&*)")
         return v
 
 

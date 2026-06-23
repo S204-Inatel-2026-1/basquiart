@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { MotionConfig } from 'motion/react';
 
 export type FontSize = 'normal' | 'large' | 'xl';
 export type LetterSpacing = 'normal' | 'wide';
@@ -106,7 +107,9 @@ export const AccessibilityProvider = ({ children }: { children: ReactNode }) => 
       setFocusHighlight: (v) => update({ focusHighlight: v }),
       setLargeCursor: (v) => update({ largeCursor: v }),
     }}>
-      {children}
+      <MotionConfig reducedMotion={state.reduceMotion ? 'always' : 'never'}>
+        {children}
+      </MotionConfig>
     </AccessibilityContext.Provider>
   );
 };

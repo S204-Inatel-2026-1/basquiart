@@ -129,7 +129,8 @@
 }
 
 /* Fonte amigável para dislexia */
-[data-dyslexia-font="true"] {
+[data-dyslexia-font="true"],
+[data-dyslexia-font="true"] * {
   font-family: "Comic Sans MS", "Comic Sans", cursive, var(--font-sans) !important;
 }
 

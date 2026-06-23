@@ -29,12 +29,18 @@ export const ThemeBackground = () => {
   useEffect(() => {
     const onScroll = () => {
       if (!ref.current) return;
-      const offset = window.scrollY * PARALLAX_SPEED;
+      const maxOffset = window.innerHeight * 0.3;
+      const offset = Math.min(maxOffset, Math.max(-maxOffset, window.scrollY * PARALLAX_SPEED));
       ref.current.style.transform = `translateY(${offset}px)`;
     };
 
+    onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, []);
 
   return (
