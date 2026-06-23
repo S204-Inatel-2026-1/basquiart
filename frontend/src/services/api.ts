@@ -113,8 +113,8 @@ function withAvatar<T extends User>(user: T): T {
 
 function mapGroupSummary(group: BackendGroupSummary): Group {
   const fallbackDescription = group.lastPost
-    ? `Ultimo post de ${group.lastPost.author}`
-    : `Participacao como ${group.role.toLowerCase()}`;
+    ? `Último post de ${group.lastPost.author}`
+    : `Participação como ${group.role.toLowerCase()}`;
 
   return {
     id: group.groupId,
@@ -153,7 +153,7 @@ function mapPostToArtwork(post: BackendPost): Artwork {
     username,
     avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(username)}`,
     title,
-    description: content || 'Sem descricao.',
+    description: content || 'Sem descrição.',
     image_url: imageUrl,
     technique_score: technique,
     authenticity_score: authenticity,
@@ -282,14 +282,14 @@ async function requestWithAuth<T>(endpoint: string, options: RequestInit = {}, i
     if (authService.isTokenExpired(token) && !isRetry) {
       if (_isRefreshing) {
         authService.clearAuth();
-        throw new Error('Sessao expirada. Faca login novamente.');
+        throw new Error('Sessão expirada. Faça login novamente.');
       }
       _isRefreshing = true;
       const newToken = await _tryRefreshToken();
       _isRefreshing = false;
       if (!newToken) {
         authService.clearAuth();
-        throw new Error('Sessao expirada. Faca login novamente.');
+        throw new Error('Sessão expirada. Faça login novamente.');
       }
       headers.set('Authorization', `Bearer ${newToken}`);
     } else {
@@ -310,12 +310,12 @@ async function requestWithAuth<T>(endpoint: string, options: RequestInit = {}, i
       return requestWithAuth<T>(endpoint, options, true);
     }
     authService.clearAuth();
-    throw new Error('Nao autorizado. Faca login novamente.');
+    throw new Error('Não autorizado. Faça login novamente.');
   }
 
   if (response.status === 401) {
     authService.clearAuth();
-    throw new Error('Nao autorizado. Faca login novamente.');
+    throw new Error('Não autorizado. Faça login novamente.');
   }
 
   if (!response.ok) {

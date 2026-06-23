@@ -91,7 +91,7 @@ export const GroupsPage = ({
         setPendingInvitesError(
           err instanceof Error
             ? err.message
-            : 'Nao foi possivel carregar convites pendentes.'
+            : 'Não foi possível carregar convites pendentes.'
         );
       })
       .finally(() => {
@@ -194,13 +194,13 @@ export const GroupsPage = ({
     setInviteSuccessId(null);
 
     if (!inviteGroupId) {
-      setInviteError('Grupo invalido para convite.');
+      setInviteError('Grupo inválido para convite.');
       return;
     }
 
     const receiverId = Number(inviteReceiverId.trim());
     if (!Number.isInteger(receiverId) || receiverId <= 0) {
-      setInviteError('Informe um ID de usuario valido.');
+      setInviteError('Informe um ID de usuário válido.');
       return;
     }
 
@@ -211,7 +211,7 @@ export const GroupsPage = ({
       setInviteReceiverId('');
     } catch (err) {
       console.error(err);
-      setInviteError(err instanceof Error ? err.message : 'Nao foi possivel criar o convite.');
+      setInviteError(err instanceof Error ? err.message : 'Não foi possível criar o convite.');
     } finally {
       setIsSubmittingInvite(false);
     }
@@ -231,7 +231,7 @@ export const GroupsPage = ({
       setPendingInvitesError(
         err instanceof Error
           ? err.message
-          : 'Nao foi possivel aceitar este convite.'
+          : 'Não foi possível aceitar este convite.'
       );
     } finally {
       setAcceptingInviteId(null);
@@ -325,7 +325,7 @@ export const GroupsPage = ({
       setDeleteGroupError(
         err instanceof Error
           ? err.message
-          : 'Nao foi possivel excluir este coletivo.'
+          : 'Não foi possível excluir este coletivo.'
       );
     } finally {
       setDeletingGroupId(null);
@@ -366,7 +366,7 @@ export const GroupsPage = ({
       setLeaveGroupError(
         err instanceof Error
           ? err.message
-          : 'Nao foi possivel sair deste coletivo.'
+          : 'Não foi possível sair deste coletivo.'
       );
     } finally {
       setLeavingGroupId(null);
@@ -473,7 +473,7 @@ export const GroupsPage = ({
             <div className="space-y-3">
               <h3 className="font-serif text-2xl">Convite #{invite.id}</h3>
               <p className="font-sans text-xs tracking-wide text-muted">
-                Grupo #{invite.groupId} • Enviado por usuario #{invite.senderId}
+                Grupo #{invite.groupId} • Enviado por usuário #{invite.senderId}
               </p>
               <p className="font-sans text-[11px] text-muted">
                 Recebido em {new Date(invite.createdAt).toLocaleDateString()}
@@ -743,10 +743,10 @@ export const GroupsPage = ({
           <motion.div {...modalBackdropMotion} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm">
             <motion.div {...modalPanelMotion} className="bg-white soft-card p-10 w-full max-w-md">
               <h3 className="font-serif text-3xl mb-2">Convidar para Coletivo</h3>
-              <p className="text-muted text-sm mb-8">Informe o ID numerico do usuario para gerar um convite.</p>
+              <p className="text-muted text-sm mb-8">Informe o ID numérico do usuário para gerar um convite.</p>
               <motion.form variants={staggerContainer} initial="hidden" animate="show" onSubmit={handleCreateInvite} className="space-y-6">
                 <motion.div variants={itemMotion} className="space-y-2">
-                  <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">ID do Usuario</label>
+                  <label className="font-sans text-[10px] tracking-widest font-semibold text-muted uppercase">ID do Usuário</label>
                   <input
                     value={inviteReceiverId}
                     onChange={(e) => setInviteReceiverId(e.target.value)}
@@ -781,7 +781,7 @@ export const GroupsPage = ({
         {deleteTargetGroup && (
           <DeleteConfirmModal
             title="Excluir Coletivo"
-            description="Esta acao remove o coletivo, seus convites e suas publicacoes. Depois da confirmacao, a remocao nao pode ser desfeita."
+            description="Esta ação remove o coletivo, seus convites e suas publicações. Depois da confirmação, a remoção não pode ser desfeita."
             itemName={deleteTargetGroup.name}
             loading={deletingGroupId === deleteTargetGroup.id}
             error={deleteGroupError}
@@ -792,7 +792,7 @@ export const GroupsPage = ({
         {leaveTargetGroup && (
           <DeleteConfirmModal
             title="Sair do Coletivo"
-            description="Esta acao remove sua participacao no coletivo. Para voltar a um coletivo privado, sera necessario receber um novo convite."
+            description="Esta ação remove sua participação no coletivo. Para voltar a um coletivo privado, será necessário receber um novo convite."
             itemName={leaveTargetGroup.name}
             confirmLabel="SAIR"
             loading={leavingGroupId === leaveTargetGroup.id}
