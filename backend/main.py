@@ -12,6 +12,7 @@ from features.core.database import db
 from features.auth.router import router as auth_router
 from features.group.router import router as group_router
 from features.post.router import router as post_router
+from features.bid.router import router as bid_router
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -57,3 +58,4 @@ app.mount("/images", StaticFiles(directory="./database/images"), name="images")
 app.include_router(auth_router)
 app.include_router(group_router)
 app.include_router(post_router)
+app.include_router(bid_router)

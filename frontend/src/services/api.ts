@@ -1,4 +1,4 @@
-import type { Artwork, Comment, Group, User } from '../types';
+import type { Artwork, Bid, Comment, Group, User } from '../types';
 import { authService } from './auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -94,6 +94,28 @@ type BackendComment = {
   };
 };
 
+type BackendBid = {
+  id: number;
+  amount: number;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'PAID';
+  createdAt: string;
+  postId: number;
+  bidderId: number;
+  bidder?: {
+    id: number;
+    username: string;
+  } | null;
+};
+
+type BackendPayment = {
+  id: number;
+  amount: number;
+  cardholderName: string;
+  cardLast4: string;
+  createdAt: string;
+  bidId: number;
+};
+
 type BackendPaginatedPosts = {
   page: number;
   pageSize: number;
@@ -164,6 +186,20 @@ function mapPostToArtwork(post: BackendPost): Artwork {
     comment_count: post.commentCount ?? 0,
     like_count: post.likes?.totalLikes ?? 0,
     has_liked: post.likes?.hasLiked ?? false,
+  };
+}
+
+function mapBidToFrontend(bid: BackendBid): Bid {
+  const username = bid.bidder?.username || `user-${bid.bidderId}`;
+
+  return {
+    id: bid.id,
+    artwork_id: bid.postId,
+    bidder_id: bid.bidderId,
+    bidder_username: username,
+    amount: bid.amount,
+    status: bid.status.toLowerCase() as Bid['status'],
+    created_at: bid.createdAt,
   };
 }
 
@@ -513,8 +549,54 @@ export const postApi = {
   },
 };
 
+export const bidApi = {
+  async create(postId: number, amount: number): Promise<Bid> {
+    const response = await jsonRequest<BackendBid>(`/bids/posts/${postId}`, {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    });
+    return mapBidToFrontend(response);
+  },
+
+  async listForPost(postId: number): Promise<Bid[]> {
+    const response = await requestWithAuth<BackendBid[]>(`/bids/posts/${postId}`);
+    return response.map(mapBidToFrontend);
+  },
+
+  async accept(bidId: number): Promise<Bid> {
+    const response = await requestWithAuth<BackendBid>(`/bids/${bidId}/accept`, {
+      method: 'POST',
+    });
+    return mapBidToFrontend(response);
+  },
+
+  async reject(bidId: number): Promise<Bid> {
+    const response = await requestWithAuth<BackendBid>(`/bids/${bidId}/reject`, {
+      method: 'POST',
+    });
+    return mapBidToFrontend(response);
+  },
+
+  async pay(
+    bidId: number,
+    payload: { cardholderName: string; cardNumber: string; expiry: string; cvv: string }
+  ): Promise<{ id: number; amount: number; cardLast4: string }> {
+    const response = await jsonRequest<BackendPayment>(`/bids/${bidId}/pay`, {
+      method: 'POST',
+      body: JSON.stringify({
+        cardholder_name: payload.cardholderName,
+        card_number: payload.cardNumber,
+        expiry: payload.expiry,
+        cvv: payload.cvv,
+      }),
+    });
+    return { id: response.id, amount: response.amount, cardLast4: response.cardLast4 };
+  },
+};
+
 export const api = {
   auth: authApi,
   groups: groupApi,
   posts: postApi,
+  bids: bidApi,
 };

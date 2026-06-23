@@ -21,6 +21,7 @@ model User {
   likes           PostLike[]
   ratings         PostRating[]
   comments        PostComment[]
+  bids            Bid[]
 }
 
 model Group {
@@ -87,6 +88,7 @@ model Post {
   likes    PostLike[]
   ratings  PostRating[]
   comments PostComment[]
+  bids     Bid[]
 }
 
 model PostImage {
@@ -138,4 +140,37 @@ model PostRating {
   category   RatingCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId, categoryId])
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  PAID
+}
+
+model Bid {
+  id        Int       @id @default(autoincrement())
+  amount    Float
+  status    BidStatus @default(PENDING)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  postId   Int
+  bidderId Int
+  post     Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  bidder   User @relation(fields: [bidderId], references: [id], onDelete: Cascade)
+
+  payment Payment?
+}
+
+model Payment {
+  id             Int      @id @default(autoincrement())
+  amount         Float
+  cardholderName String
+  cardLast4      String
+  createdAt      DateTime @default(now())
+
+  bidId Int @unique
+  bid   Bid @relation(fields: [bidId], references: [id], onDelete: Cascade)
 }

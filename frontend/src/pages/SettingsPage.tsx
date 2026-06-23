@@ -95,7 +95,12 @@ export const SettingsPage = ({
   onUpdateUser: (u: User) => void;
 }) => {
   const { theme, setTheme } = useTheme();
-  const { fontSize, highContrast, reduceMotion, setFontSize, setHighContrast, setReduceMotion } = useAccessibility();
+  const {
+    fontSize, highContrast, reduceMotion,
+    dyslexiaFont, underlineLinks, letterSpacing, lineSpacing, grayscale, focusHighlight, largeCursor,
+    setFontSize, setHighContrast, setReduceMotion,
+    setDyslexiaFont, setUnderlineLinks, setLetterSpacing, setLineSpacing, setGrayscale, setFocusHighlight, setLargeCursor,
+  } = useAccessibility();
 
   const [copyStatus, setCopyStatus] = React.useState<'idle' | 'success' | 'error'>('idle');
 
@@ -237,6 +242,95 @@ export const SettingsPage = ({
                 <span className="font-sans text-[10px] text-muted">Remove transições e efeitos de movimento</span>
               </div>
               <Toggle on={reduceMotion} onToggle={() => setReduceMotion(!reduceMotion)} />
+            </div>
+
+            {/* Dyslexia font */}
+            <div className="flex justify-between items-center p-4 bg-paper/30 rounded-2xl border border-ink/5">
+              <div>
+                <span className="font-sans text-sm font-medium block">Fonte para Dislexia</span>
+                <span className="font-sans text-[10px] text-muted">Usa uma fonte mais fácil de ler para quem tem dislexia</span>
+              </div>
+              <Toggle on={dyslexiaFont} onToggle={() => setDyslexiaFont(!dyslexiaFont)} />
+            </div>
+
+            {/* Underline links */}
+            <div className="flex justify-between items-center p-4 bg-paper/30 rounded-2xl border border-ink/5">
+              <div>
+                <span className="font-sans text-sm font-medium block">Sublinhar Links e Botões</span>
+                <span className="font-sans text-[10px] text-muted">Facilita identificar elementos clicáveis</span>
+              </div>
+              <Toggle on={underlineLinks} onToggle={() => setUnderlineLinks(!underlineLinks)} />
+            </div>
+
+            {/* Letter spacing */}
+            <div className="p-4 bg-paper/30 rounded-2xl border border-ink/5 space-y-3">
+              <span className="font-sans text-sm font-medium block">Espaçamento entre Letras</span>
+              <div className="flex gap-2">
+                {([
+                  { value: 'normal' as const, label: 'Normal' },
+                  { value: 'wide' as const, label: 'Espaçado' },
+                ]).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setLetterSpacing(value)}
+                    className={`flex-1 py-2 rounded-xl font-sans text-[10px] tracking-widest font-bold uppercase transition-all ${
+                      letterSpacing === value ? 'bg-gold text-ink' : 'bg-ink/5 text-muted hover:bg-ink/10'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Line spacing */}
+            <div className="p-4 bg-paper/30 rounded-2xl border border-ink/5 space-y-3">
+              <span className="font-sans text-sm font-medium block">Espaçamento entre Linhas</span>
+              <div className="flex gap-2">
+                {([
+                  { value: 'normal' as const, label: 'Normal' },
+                  { value: 'relaxed' as const, label: 'Relaxado' },
+                ]).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setLineSpacing(value)}
+                    className={`flex-1 py-2 rounded-xl font-sans text-[10px] tracking-widest font-bold uppercase transition-all ${
+                      lineSpacing === value ? 'bg-gold text-ink' : 'bg-ink/5 text-muted hover:bg-ink/10'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Grayscale */}
+            <div className="flex justify-between items-center p-4 bg-paper/30 rounded-2xl border border-ink/5">
+              <div>
+                <span className="font-sans text-sm font-medium block">Escala de Cinza</span>
+                <span className="font-sans text-[10px] text-muted">Auxilia usuários com daltonismo</span>
+              </div>
+              <Toggle on={grayscale} onToggle={() => setGrayscale(!grayscale)} />
+            </div>
+
+            {/* Focus highlight */}
+            <div className="flex justify-between items-center p-4 bg-paper/30 rounded-2xl border border-ink/5">
+              <div>
+                <span className="font-sans text-sm font-medium block">Destaque de Foco</span>
+                <span className="font-sans text-[10px] text-muted">Realça o elemento focado para navegação por teclado</span>
+              </div>
+              <Toggle on={focusHighlight} onToggle={() => setFocusHighlight(!focusHighlight)} />
+            </div>
+
+            {/* Large cursor */}
+            <div className="flex justify-between items-center p-4 bg-paper/30 rounded-2xl border border-ink/5">
+              <div>
+                <span className="font-sans text-sm font-medium block">Cursor Grande</span>
+                <span className="font-sans text-[10px] text-muted">Aumenta o tamanho do cursor do mouse</span>
+              </div>
+              <Toggle on={largeCursor} onToggle={() => setLargeCursor(!largeCursor)} />
             </div>
           </motion.div>
 

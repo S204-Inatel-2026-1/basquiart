@@ -6,6 +6,7 @@ import { api } from '../services/api';
 import { RatingModal } from '../components/RatingModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { CommentsSection } from '../components/CommentsSection';
+import { BidModal } from '../components/BidModal';
 import { cardMotion, interactiveCardMotion, staggerContainer, subtleButtonMotion } from '../lib/motion';
 
 export const FeedPage = ({
@@ -30,6 +31,7 @@ export const FeedPage = ({
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [loading, setLoading] = useState(true);
   const [ratingTarget, setRatingTarget] = useState<Artwork | null>(null);
+  const [bidTarget, setBidTarget] = useState<Artwork | null>(null);
   const [openComments, setOpenComments] = useState<number | null>(null);
   const [likingPostIds, setLikingPostIds] = useState<number[]>([]);
   const [deletingPostIds, setDeletingPostIds] = useState<number[]>([]);
@@ -172,7 +174,7 @@ export const FeedPage = ({
         variants={staggerContainer}
         initial="hidden"
         animate="show"
-        className={`grid gap-8 ${isBackendGroupFeed ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}
+        className={`grid gap-8 ${isBackendGroupFeed ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'}`}
       >
         {artworks.map((art) => (
           <motion.div
@@ -235,8 +237,8 @@ export const FeedPage = ({
               </AnimatePresence>
             </div>
 
-            <div className="p-5 bg-paper/50 border-t border-ink/5 flex justify-between items-center">
-              <div className="flex items-center gap-4">
+            <div className="p-5 bg-paper/50 border-t border-ink/5 flex flex-wrap justify-between items-center gap-y-3">
+              <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2 font-serif text-xl">
                   <Trophy size={16} className="text-gold" />
                   {art.total_points}
@@ -257,6 +259,16 @@ export const FeedPage = ({
                     className={`flex items-center gap-1.5 font-sans text-[9px] tracking-widest uppercase transition-colors ${art.has_liked ? 'text-red-500' : 'text-muted hover:text-red-500'} disabled:opacity-40`}
                   >
                     <Heart size={12} fill={art.has_liked ? 'currentColor' : 'none'} /> Curtidas ({art.like_count || 0})
+                  </motion.button>
+                )}
+                {isBackendGroupFeed && user && (
+                  <motion.button
+                    {...subtleButtonMotion}
+                    onClick={() => setBidTarget(art)}
+                    className="flex items-center gap-1.5 font-sans text-[9px] tracking-widest uppercase text-muted hover:text-gold transition-colors"
+                    title="Dar um lance por esta obra"
+                  >
+                    <Gavel size={12} /> Lance
                   </motion.button>
                 )}
               </div>
@@ -320,6 +332,17 @@ export const FeedPage = ({
             error={deleteError}
             onCancel={closeDeleteModal}
             onConfirm={() => void handleDeletePost()}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {bidTarget && user && (
+          <BidModal
+            artwork={bidTarget}
+            user={user}
+            onClose={() => setBidTarget(null)}
+            onChanged={fetchArt}
           />
         )}
       </AnimatePresence>

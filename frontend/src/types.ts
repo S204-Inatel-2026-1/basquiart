@@ -47,3 +47,14 @@ export interface Comment {
   content: string;
   created_at: string;
 }
+
+export interface Bid {
+  id: number;
+  artwork_id: number;
+  bidder_id: number;
+  bidder_username: string;
+  amount: number;
+  status: 'pending' | 'accepted' | 'rejected' | 'paid';
+  created_at: string;
+}
+

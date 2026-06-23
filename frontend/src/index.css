@@ -128,6 +128,46 @@
   transition-duration: 0.01ms !important;
 }
 
+/* Fonte amigável para dislexia */
+[data-dyslexia-font="true"] {
+  font-family: "Comic Sans MS", "Comic Sans", cursive, var(--font-sans) !important;
+}
+
+/* Sublinhar links e botões com texto */
+[data-underline-links="true"] a,
+[data-underline-links="true"] button {
+  text-decoration: underline !important;
+}
+
+/* Espaçamento entre letras */
+[data-letter-spacing="wide"] {
+  letter-spacing: 0.04em;
+}
+
+/* Espaçamento entre linhas */
+[data-line-spacing="relaxed"] p,
+[data-line-spacing="relaxed"] li,
+[data-line-spacing="relaxed"] span {
+  line-height: 1.9 !important;
+}
+
+/* Escala de cinza (auxilia daltonismo) */
+[data-grayscale="true"] {
+  filter: grayscale(1);
+}
+
+/* Destaque de foco para navegação por teclado */
+[data-focus-highlight="true"] :focus-visible {
+  outline: 3px solid var(--theme-gold) !important;
+  outline-offset: 2px !important;
+}
+
+/* Cursor grande */
+[data-large-cursor="true"],
+[data-large-cursor="true"] * {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24'><path d='M3 2l7.07 18 2.51-7.39L20 10.07z' fill='black' stroke='white' stroke-width='1'/></svg>") 0 0, auto !important;
+}
+
 /* Custom scrollbar for elegance */
 ::-webkit-scrollbar {
   width: 6px;
