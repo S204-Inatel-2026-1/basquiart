@@ -28,7 +28,7 @@ test('mostra erro amigável quando o login falha', async ({ page }) => {
   await page.getByLabel(/Senha/i).fill('senha-errada');
   await page.getByRole('button', { name: 'Entrar no Estúdio' }).click();
 
-  await expect(page.getByText(/nao autorizado\. faca login novamente\./i)).toBeVisible();
+  await expect(page.getByText(/não autorizado\. faça login novamente\./i)).toBeVisible();
 });
 
 test('faz login com sucesso e mantém a sessão salva no navegador', async ({ page }) => {
