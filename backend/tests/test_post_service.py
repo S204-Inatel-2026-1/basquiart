@@ -69,6 +69,7 @@ async def test_get_posts_success(post_service, mock_db):
         ratings=[],
         likes=[],
         comments=[],
+        visibility="private",
     )
     mock_db.post.find_many.return_value = [mock_post]
     mock_db.post.count.return_value = 1
@@ -101,6 +102,7 @@ async def test_get_posts_pagination(post_service, mock_db):
         ratings=[],
         likes=[],
         comments=[],
+        visibility="private",
     )
     mock_db.post.find_many.return_value = [mock_post] * 5
     mock_db.post.count.return_value = 25
@@ -127,6 +129,7 @@ async def test_make_post_success(post_service, mock_db, mock_image_handler):
         authorId=1,
         groupId=1,
         images=[],
+        visibility="private",
     )
     mock_db.post.create.return_value = mock_post
 
@@ -171,6 +174,7 @@ async def test_make_post_no_images(post_service, mock_db):
         id=2,
         content="Text only",
         images=[],
+        visibility="private",
     )
     mock_db.post.create.return_value = mock_post
 
@@ -196,6 +200,7 @@ async def test_delete_post_author_can_delete(post_service, mock_db, mock_image_h
         groupId=1,
         images=[SimpleNamespace(url="http://example.com/img.jpg")],
         group=SimpleNamespace(members=[]),
+        visibility="private",
     )
     mock_db.post.find_unique.return_value = mock_post
 
@@ -215,6 +220,7 @@ async def test_delete_post_owner_can_delete(post_service, mock_db, mock_image_ha
         groupId=1,
         images=[],
         group=SimpleNamespace(members=[member]),
+        visibility="private",
     )
     mock_db.post.find_unique.return_value = mock_post
 
@@ -232,6 +238,7 @@ async def test_delete_post_not_author_or_owner(post_service, mock_db):
         groupId=1,
         images=[],
         group=SimpleNamespace(members=[member]),
+        visibility="private",
     )
     mock_db.post.find_unique.return_value = mock_post
 
@@ -253,7 +260,7 @@ async def test_delete_post_not_found(post_service, mock_db):
 @pytest.mark.asyncio
 async def test_toggle_like_create(post_service, mock_db):
     """Test creating like when none exists"""
-    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1)
+    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1, visibility="private")
     mock_db.groupmember.find_unique.return_value = MagicMock()
     mock_db.postlike.find_unique.return_value = None
     mock_db.postlike.create.return_value = SimpleNamespace(userId=1, postId=1)
@@ -267,7 +274,7 @@ async def test_toggle_like_create(post_service, mock_db):
 @pytest.mark.asyncio
 async def test_toggle_like_delete(post_service, mock_db):
     """Test deleting like when already exists"""
-    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1)
+    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1, visibility="private")
     mock_db.groupmember.find_unique.return_value = MagicMock()
     mock_db.postlike.find_unique.return_value = SimpleNamespace(userId=1, postId=1)
 
@@ -289,7 +296,7 @@ async def test_toggle_like_post_not_found(post_service, mock_db):
 @pytest.mark.asyncio
 async def test_toggle_like_user_not_member(post_service, mock_db):
     """Test toggle like when user not member of group"""
-    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1)
+    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1, visibility="private")
     mock_db.groupmember.find_unique.return_value = None
 
     with pytest.raises(ValueError, match="not a member"):
@@ -306,6 +313,7 @@ async def test_rate_post_success(post_service, mock_db):
         authorId=2,
         groupId=1,
         images=[SimpleNamespace(url="img.jpg")],
+        visibility="private",
     )
     mock_db.groupmember.find_unique.return_value = MagicMock()
     mock_db.ratingcategory.find_unique.return_value = SimpleNamespace(id=1, name="Creativity")
@@ -326,6 +334,7 @@ async def test_rate_post_user_is_author(post_service, mock_db):
         authorId=1,
         groupId=1,
         images=[SimpleNamespace(url="img.jpg")],
+        visibility="private",
     )
     mock_db.groupmember.find_unique.return_value = MagicMock()
 
@@ -341,6 +350,7 @@ async def test_rate_post_no_images(post_service, mock_db):
         authorId=2,
         groupId=1,
         images=[],
+        visibility="private",
     )
     mock_db.groupmember.find_unique.return_value = MagicMock()
 
@@ -356,6 +366,7 @@ async def test_rate_post_invalid_category(post_service, mock_db):
         authorId=2,
         groupId=1,
         images=[SimpleNamespace(url="img.jpg")],
+        visibility="private",
     )
     mock_db.groupmember.find_unique.return_value = MagicMock()
     mock_db.ratingcategory.find_unique.return_value = None
@@ -370,7 +381,7 @@ async def test_rate_post_invalid_category(post_service, mock_db):
 @pytest.mark.asyncio
 async def test_get_comments_success(post_service, mock_db):
     """Test getting comments for a post"""
-    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1)
+    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1, visibility="private")
     mock_db.groupmember.find_unique.return_value = MagicMock()
     
     comment = SimpleNamespace(
@@ -399,7 +410,7 @@ async def test_get_comments_post_not_found(post_service, mock_db):
 @pytest.mark.asyncio
 async def test_get_comments_user_not_member(post_service, mock_db):
     """Test user not member cannot get comments"""
-    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1)
+    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1, visibility="private")
     mock_db.groupmember.find_unique.return_value = None
 
     with pytest.raises(ValueError, match="not a member"):
@@ -411,7 +422,7 @@ async def test_get_comments_user_not_member(post_service, mock_db):
 @pytest.mark.asyncio
 async def test_create_comment_success_trims_content(post_service, mock_db):
     """Test creating a comment trims content and stores it"""
-    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1)
+    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1, visibility="private")
     mock_db.groupmember.find_unique.return_value = MagicMock()
     mock_db.postcomment.create.return_value = SimpleNamespace(
         id=10,
@@ -446,7 +457,7 @@ async def test_create_comment_post_not_found(post_service, mock_db):
 @pytest.mark.asyncio
 async def test_create_comment_user_not_member(post_service, mock_db):
     """Test non-member cannot create comments"""
-    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1)
+    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1, visibility="private")
     mock_db.groupmember.find_unique.return_value = None
 
     with pytest.raises(ValueError, match="not a member"):
@@ -456,7 +467,7 @@ async def test_create_comment_user_not_member(post_service, mock_db):
 @pytest.mark.asyncio
 async def test_create_comment_empty_after_trim(post_service, mock_db):
     """Test empty comments are rejected after whitespace trimming"""
-    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1)
+    mock_db.post.find_unique.return_value = SimpleNamespace(id=1, groupId=1, visibility="private")
     mock_db.groupmember.find_unique.return_value = MagicMock()
 
     with pytest.raises(ValueError, match="Comment cannot be empty"):
