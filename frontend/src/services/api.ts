@@ -310,12 +310,12 @@ async function requestWithAuth<T>(endpoint: string, options: RequestInit = {}, i
       return requestWithAuth<T>(endpoint, options, true);
     }
     authService.clearAuth();
-    throw new Error('Não autorizado. Faça login novamente.');
+    throw new Error('Nao autorizado. Faca login novamente.');
   }
 
   if (response.status === 401) {
     authService.clearAuth();
-    throw new Error('Não autorizado. Faça login novamente.');
+    throw new Error('Nao autorizado. Faca login novamente.');
   }
 
   if (!response.ok) {
