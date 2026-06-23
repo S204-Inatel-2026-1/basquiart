@@ -68,7 +68,7 @@ export const FeedPage = ({
       setDeleteTarget(null);
     } catch (err) {
       console.error(err);
-      setDeleteError(err instanceof Error ? err.message : 'Nao foi possivel excluir esta publicacao.');
+      setDeleteError(err instanceof Error ? err.message : 'Não foi possível excluir esta publicação.');
     } finally {
       setDeletingPostIds(prev => prev.filter(id => id !== postId));
     }
@@ -313,8 +313,8 @@ export const FeedPage = ({
       <AnimatePresence>
         {deleteTarget && (
           <DeleteConfirmModal
-            title="Excluir Publicacao"
-            description="Esta acao remove a publicacao do coletivo e nao pode ser desfeita."
+            title="Excluir Publicação"
+            description="Esta ação remove a publicação do coletivo e não pode ser desfeita."
             itemName={deleteTarget.title}
             loading={deletingPostIds.includes(deleteTarget.id)}
             error={deleteError}

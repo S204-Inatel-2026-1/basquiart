@@ -10,7 +10,7 @@ const themes: { name: ThemeName; label: string; description: string; preview: { 
   {
     name: 'dark',
     label: 'Noite Digital',
-    description: 'Escuro com padroes geometricos',
+    description: 'Escuro com padrões geométricos',
     preview: {
       bg: '#0a0a0f', accent: '#c5a059', text: '#e8e8e8',
       pattern: (
@@ -49,8 +49,8 @@ const themes: { name: ThemeName; label: string; description: string; preview: { 
   },
   {
     name: 'white',
-    label: 'Jardim Botanico',
-    description: 'Branco com padroes florais',
+    label: 'Jardim Botânico',
+    description: 'Branco com padrões florais',
     preview: {
       bg: '#ffffff', accent: '#7b9e6b', text: '#1a1a1a',
       pattern: (
